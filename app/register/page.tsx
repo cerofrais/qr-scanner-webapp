@@ -1,6 +1,6 @@
 import EntryForm from "@/components/EntryForm";
 import Mosaic from "@/components/Mosaic";
-import { EVENT, MOODS } from "@/utils/event";
+import { EVENT } from "@/utils/event";
 
 export default function RegisterPage() {
   return (
@@ -37,7 +37,7 @@ export default function RegisterPage() {
       </header>
 
       <main className="flex-1">
-        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-x-16">
+        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-x-16 lg:items-start">
           <section className="lg:col-start-1 lg:row-start-1">
             <p className="eyebrow text-brick">Register</p>
             <h2 className="mt-3 font-serif text-4xl leading-tight text-ink sm:text-5xl">Get your entry pass.</h2>
@@ -47,24 +47,10 @@ export default function RegisterPage() {
             </p>
           </section>
 
-          <section className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <section className="lg:col-start-2 lg:row-start-1">
             <EntryForm variant="guest" />
           </section>
 
-          <section className="lg:col-start-1 lg:row-start-2">
-            <div className="border-t border-rule pt-8">
-              <p className="eyebrow text-brick">What&apos;s on the floor</p>
-              <h2 className="mt-3 font-serif text-3xl leading-tight text-ink">Nine moods. One floor.</h2>
-              <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                {MOODS.map((mood) => (
-                  <li key={mood.name} className="card border-l-[3px] px-4 py-3.5" style={{ borderLeftColor: mood.color }}>
-                    <p className="font-serif text-lg leading-snug text-ink">{mood.name}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-umber">{mood.note}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
         </div>
       </main>
 

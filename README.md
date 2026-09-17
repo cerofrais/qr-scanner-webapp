@@ -49,9 +49,13 @@ Create a `.env.local` file in the project root:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
 ADMIN_SECRET=your_strong_passcode
 ```
+
+`SUPABASE_SECRET_KEY` is server-only — never give it a `NEXT_PUBLIC_` prefix. The `entries` table has no RLS policies, so the publishable key can't read or write it; every query goes through the route handlers in `app/api`, which use the secret key. The browser is never given a Supabase key at all.
+
+The scripts in `scripts/` read `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` from the environment too.
 
 ---
 
@@ -69,7 +73,9 @@ ADMIN_SECRET=your_strong_passcode
 | `checked_in_at` | timestamptz | Set on first scan |
 | `created_at` | timestamptz | |
 
-`public.entries_archive` holds registrations from past events as jsonb snapshots (`event`, `data`). It has RLS enabled with no policies, so it's only readable from the Supabase dashboard / SQL editor.
+`public.entries_archive` holds registrations from past events as jsonb snapshots (`event`, `data`).
+
+Both tables have RLS enabled with **no policies**. That makes them unreachable with the publishable key (which ships to browsers) and readable only via the secret key or the Supabase dashboard. Guest names, emails and phone numbers are only ever served through the staff-gated API.
 
 Apply migrations with the Supabase CLI:
 
@@ -144,9 +150,9 @@ components/
   PageHeader.tsx, Mosaic.tsx, LogoutButton.tsx
 
 utils/
-  event.ts              # Event copy: name, date, venue, nine moods
+  event.ts              # Event copy: name, date, venue
   entry.ts              # Entry type, validation, phone normalisation
-  supabase/             # Supabase client helpers
+  supabase/server.ts    # Server-only client (secret key, bypasses RLS)
 
 proxy.ts                # Staff-gates everything except /register, /login, /api/auth, POST /api/entries
 supabase/migrations/    # SQL migrations

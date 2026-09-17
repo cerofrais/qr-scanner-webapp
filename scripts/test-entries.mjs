@@ -4,11 +4,12 @@
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const key = process.env.SUPABASE_SECRET_KEY;
 
 if (!url || !key) {
   console.error("Missing env vars.");
-  console.error("Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  console.error("Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY");
+  console.error("(entries has no policies for the public key — the secret key is required.)");
   process.exit(1);
 }
 

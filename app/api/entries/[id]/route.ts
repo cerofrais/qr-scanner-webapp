@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { cleanEntryInput } from "@/utils/entry";
 
@@ -8,8 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from("entries")
@@ -29,8 +27,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const raw = await request.text();
   const body = raw ? JSON.parse(raw) : {};
@@ -116,8 +113,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const { error } = await supabase.from("entries").delete().eq("id", id);
 

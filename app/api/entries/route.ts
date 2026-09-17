@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { cleanEntryInput } from "@/utils/entry";
 
 const SEARCH_LIMIT = 50;
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
   const body = await request.json().catch(() => null);
 
   if (!body || typeof body !== "object") {
@@ -35,8 +33,7 @@ export async function POST(request: NextRequest) {
 // at 1,000 rows, so fetching everything and filtering here would silently
 // miss older registrations.
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   // Strip characters that have meaning inside a PostgREST or() filter.
   const q = (request.nextUrl.searchParams.get("q") ?? "").replace(/[,()"\\%*]/g, " ").trim();
