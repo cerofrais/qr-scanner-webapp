@@ -1,27 +1,83 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* moodboard palette — sampled from the sponsor deck (SAS I Towers, 2026). */
+@theme {
+  --color-navy: #16263f;
+  --color-navy-grid: #1e3252;
+  --color-navy-rule: #31445f;
+  --color-cream: #f4eada;
+  --color-paper: #fbf5ec;
+  --color-rule: #d8c7ae;
+  --color-ink: #201a16;
+  --color-ink-soft: #3b322b;
+  --color-umber: #5a4e43;
+  --color-taupe: #8e7b62;
+  --color-sand: #a2917c;
+  --color-mist: #c9bca9;
+  --color-haze: #7e8ca3;
+
+  --color-magenta: #e5006d;
+  --color-gold: #c08a2e;
+  --color-terracotta: #cf6a34;
+  --color-saffron: #e3ac3d;
+  --color-brick: #b0382c;
+  --color-royal: #23406b;
+  --color-forest: #3e6b4f;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-fraunces);
+  --font-serif: var(--font-lora);
+  --font-sans: var(--font-poppins);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  color-scheme: light;
+}
+
+/* Deck cover: navy with a fine blueprint grid. */
+@utility bg-grid {
+  background-color: var(--color-navy);
+  background-image:
+    linear-gradient(var(--color-navy-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-navy-grid) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position: -1px -1px;
+}
+
+/* Small letterspaced section label ("THE EVENT", "WHO WE ARE"). */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+@layer components {
+  .field {
+    @apply w-full border border-rule bg-white px-3.5 py-2.5 text-[0.95rem] text-ink placeholder:text-sand transition focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/15;
+  }
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-ink-soft;
+  }
+  .btn-primary {
+    @apply inline-flex w-full items-center justify-center gap-2 bg-navy px-5 py-3.5 text-sm font-semibold tracking-wide text-cream transition hover:bg-royal disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex w-full items-center justify-center gap-2 border border-rule bg-paper px-5 py-3 text-sm font-medium text-ink-soft transition hover:border-taupe hover:text-ink disabled:opacity-50;
+  }
+  .card {
+    @apply border border-rule bg-paper;
+  }
+  .alert-error {
+    @apply border-l-4 border-brick bg-brick/5 px-4 py-3 text-sm text-brick;
+  }
+  .alert-ok {
+    @apply border-l-4 border-forest bg-forest/5 px-4 py-3 text-sm text-forest;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-cream font-sans text-ink;
 }

@@ -1,47 +1,44 @@
-# LateCheckout x LittlePreneurs — VIP Entry System
+# moodboard · Late Checkout — Entry System
 
-A Next.js app for managing VIP guest entry at events. Families self-register with a public form — up to 2 adults and 3 kids per registration — and get a unique QR code on screen. Admins can also add registrations individually or via bulk CSV/Excel upload, and search, edit, or delete any registration. Staff scan QR codes at the door to check families in — each code can be redeemed exactly once.
+Registration and door check-in for **moodboard**, a festive-season cultural pop-up by Late Checkout — Sunday, 27 September 2026, 11 am to 9 pm at SAS I Towers, Hyderabad.
 
-Every page except `/register` requires admin login.
+Guests register at `/register` with their name, email and phone number and get a personal QR pass, with a welcome note and a *see you on 27 September at SAS I Towers*. Staff scan passes at the door: each pass checks in exactly once, and any later scan shows **Already scanned** with the time it was first used.
+
+Every page except `/register` requires staff login.
 
 ---
 
-## How It Works
+## Pages
 
-### 1. Public Registration (`/register`)
-Anyone can visit `/register` — no login required. It's the only public page. Guests enter 1–2 adults, 1–3 kids (name + age each), and a phone number, then submit. Phone number must be unique; re-registering with a number that's already on file is rejected. Trying to add a 4th kid shows a note to contact the admin instead. On success, a QR code (encoding the entry's UUID) is shown on screen to save, screenshot, or print.
+| Route | Who | What |
+| --- | --- | --- |
+| `/register` | Public | Event cover, registration form, welcome note + pass after submit |
+| `/login` | Staff | Passcode login (`ADMIN_SECRET`) |
+| `/verify` | Staff | Camera scanner — scan = check in. Shows **Success** or **Already scanned** |
+| `/onboard` | Staff | Register a walk-in, or bulk-import a spreadsheet |
+| `/admin` | Staff | Search by name / email / phone; edit, reprint or delete a registration |
 
-### 2. Admin Login
-Every other page is protected by a passcode stored in `ADMIN_SECRET`. Visiting any admin page without a valid session redirects to `/login`. The session is stored in an httpOnly cookie and lasts 7 days; `Logout` clears it.
+### Registration
+Name, email and phone number are all required. The phone field defaults to the **+91** country code; numbers are stored in E.164 (`+919876543210`), so `98765 43210`, `+91 98765-43210` and `919876543210` are recognised as the same number. Phone numbers are unique — one pass per number.
 
-### 3. Admin Onboarding (`/onboard`)
-Two modes are available for staff adding registrations on a family's behalf:
+### The pass
+Shows the QR code (the registration's UUID), name, phone, date and venue in the moodboard cover style. **Save pass** renders a 1080×1560 PNG (share sheet on phones, download on desktop); **Print** opens it for printing.
 
-**Individual** — same form as public registration (adults, kids, phone number).
+### Door check-in
+Scanning a pass immediately marks it checked in and records `checked_in_at`. The update only matches rows where `checkedin = false`, so two devices scanning the same pass at once can't both succeed — the second sees **Already scanned**.
 
-**Bulk Upload** — drag and drop (or browse) a `.xlsx`, `.xls`, or `.csv` file. Required columns: `adult1_name`, `kid1_name`, `kid1_age`, `number`. Optional: `adult2_name`, `kid2_name`/`kid2_age`, `kid3_name`/`kid3_age`. Each valid row is submitted sequentially. Rows with errors (including duplicate phone numbers) are reported in the UI.
-
-### 4. Door Verification (`/verify`)
-Staff log in, then open `/verify`. The page activates the camera and scans QR codes. On a successful scan:
-- The family's details are fetched from the database
-- Their check-in status is shown
-- Staff tap to mark them as checked in (`checkedin = true`)
-
-Check-in is atomic — if the same code is scanned twice at once, only the first request succeeds; the second is told the family is already checked in.
-
-### 5. Admin Search (`/admin`)
-Staff log in, then open `/admin` to look up a registration by name or phone number (substring match). Selecting a result from the list opens an editable record — adults, kids, phone number, and checked-in status can all be changed, or the registration can be deleted. The record's QR code is shown alongside for reprinting.
+### Bulk upload
+`.xlsx`, `.xls` or `.csv` with columns `name`, `email`, `number` (see `public/sample_upload.csv`). Rows are submitted one by one; failures (e.g. duplicate numbers) are listed.
 
 ---
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
-- **Database**: Supabase (PostgreSQL) — `adults` and `kids` are stored as JSONB arrays
-- **QR generation**: `qrcode.react` (client-side display)
-- **QR scanning**: `html5-qrcode`
+- **Database**: Supabase (PostgreSQL)
+- **QR**: `qrcode.react` (on screen), `qrcode` (saved pass image), `html5-qrcode` (scanning)
 - **Bulk upload parsing**: `xlsx`
-- **Styling**: Tailwind CSS v4
+- **Styling**: Tailwind CSS v4 — palette, Lora + Poppins, grid cover and four-square mark taken from the moodboard sponsor deck
 - **Deployment**: Vercel
 
 ---
@@ -51,28 +48,40 @@ Staff log in, then open `/admin` to look up a registration by name or phone numb
 Create a `.env.local` file in the project root:
 
 ```env
-# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-
-# Admin passcode for every page except /register
 ADMIN_SECRET=your_strong_passcode
 ```
 
 ---
 
-## Database Setup
+## Database
 
-Run the migrations against your Supabase project:
+`public.entries`:
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid | Encoded in the QR code |
+| `name` | text, not null | |
+| `email` | text, not null | |
+| `number` | text, not null, **unique** | E.164, e.g. `+919876543210` |
+| `checkedin` | boolean | |
+| `checked_in_at` | timestamptz | Set on first scan |
+| `created_at` | timestamptz | |
+
+`public.entries_archive` holds registrations from past events as jsonb snapshots (`event`, `data`). It has RLS enabled with no policies, so it's only readable from the Supabase dashboard / SQL editor.
+
+Apply migrations with the Supabase CLI:
 
 ```bash
 supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
-This creates the `public.entries` table with columns: `id`, `adults` (jsonb, e.g. `[{"name": "Jane"}]`), `kids` (jsonb, e.g. `[{"name": "Sam", "age": 7}]`), `number`, `checkedin`, `created_at`, plus legacy `name`/`child_name`/`age`/`email` columns kept (but unused) for older rows, a unique index on `number`, and RLS policies allowing anon read/write.
+For a brand-new project you can instead paste `scripts/setup_entries.sql` into the SQL editor.
 
-If upgrading a database that already has duplicate phone numbers, the unique-index migration will fail — deduplicate first (see migration comments).
+### Starting a new event
+`supabase/migrations/20260917223000_moodboard_clean_slate.sql` shows the pattern: copy `entries` into `entries_archive` under an event label, delete the archived rows, then reshape. Update `utils/event.ts` for the new event's copy.
 
 ---
 
@@ -83,12 +92,14 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you'll land on `/register`, the only public page. Every other page (`/onboard`, `/verify`, `/admin`) redirects to `/login` — enter the value you set for `ADMIN_SECRET`.
+Open [http://localhost:3000](http://localhost:3000) — you'll land on `/register`. Staff pages redirect to `/login`.
 
-**Test the database connection:**
 ```bash
-npm run test:entries
+npm run test:entries    # insert → check in → second scan rejected → cleanup
+npm run export:entries  # all registrations → entries.csv
 ```
+
+Both scripts read `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the environment.
 
 ---
 
@@ -96,10 +107,10 @@ npm run test:entries
 
 1. Push the repo to GitHub
 2. Import the project at [vercel.com/new](https://vercel.com/new)
-3. Add all environment variables from the list above in Vercel → Settings → Environment Variables
+3. Add the environment variables above in Vercel → Settings → Environment Variables
 4. Deploy
 
-The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can auto-apply migrations on push to `main` — it is currently disabled. To enable, remove the `if: ${{ false }}` line and add these repo secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`.
+The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can auto-apply migrations on push — it is currently disabled. To enable, remove the `if: ${{ false }}` line and add these repo secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`.
 
 ---
 
@@ -107,35 +118,37 @@ The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can a
 
 ```
 app/
-  layout.tsx          # Shell — SiteChrome renders the header everywhere but /register
-  page.tsx            # Redirects / → /register
-  register/page.tsx   # Public self-registration form (only unauthenticated page)
-  login/page.tsx      # Passcode login form
-  onboard/page.tsx    # Admin individual + bulk upload tabs
-  verify/page.tsx     # QR scanner for door staff
-  admin/page.tsx      # Search, edit, delete registrations
+  layout.tsx            # Root: Lora + Poppins, metadata
+  page.tsx              # Redirects / → /register
+  register/page.tsx     # Public: cover, form, nine moods
+  login/page.tsx        # Staff passcode
+  (staff)/              # Route group — shared staff header, no URL segment
+    layout.tsx
+    verify/page.tsx     # Door scanner
+    onboard/page.tsx    # Walk-in + bulk upload
+    admin/page.tsx      # Search / edit / delete
   api/
-    auth/route.ts     # POST (login) / DELETE (logout) — public
+    auth/route.ts       # POST login / DELETE logout
     entries/
-      route.ts        # GET (list/search, admin) / POST (create, public)
-      [id]/route.ts   # GET / PATCH (check-in once, or admin edit) / DELETE — admin
+      route.ts          # POST create (public) / GET search (staff)
+      [id]/route.ts     # GET / PATCH (scan-to-check-in or edit) / DELETE
 
 components/
-  EntryForm.tsx        # Dynamic adults (max 2) / kids (max 3) / phone form
-  ExcelUpload.tsx       # Drag-and-drop bulk upload
-  QRCodeDisplay.tsx     # QR code card shown after entry creation
-  QRScanner.tsx         # Camera-based QR scanner
-  AdminSearch.tsx       # Search results + edit/delete panel for /admin
-  SiteChrome.tsx        # Header/nav, hidden on /register
-  LogoutButton.tsx      # Clears session cookie
+  EntryForm.tsx         # Name / email / +91 phone form (guest + staff variants)
+  WelcomeNote.tsx       # Post-registration welcome
+  EventPass.tsx         # QR pass on screen + Save/Print image
+  QRScanner.tsx         # Scan → Success / Already scanned / Not a valid pass
+  AdminSearch.tsx       # Search results + edit panel
+  ExcelUpload.tsx       # Bulk import
+  StaffHeader.tsx       # Staff nav (Scan · Register · Search)
+  PageHeader.tsx, Mosaic.tsx, LogoutButton.tsx
 
 utils/
-  validate-entry.ts    # Shared adults/kids validation (create + edit)
-  supabase/             # Supabase client helpers (browser, server, proxy)
+  event.ts              # Event copy: name, date, venue, nine moods
+  entry.ts              # Entry type, validation, phone normalisation
+  supabase/             # Supabase client helpers
 
-proxy.ts                 # Admin-gates every route except /register, /login, /api/auth, POST /api/entries
-supabase/migrations/      # SQL migration files
-scripts/
-  setup_entries.sql      # Standalone SQL if not using CLI migrations
-  test-entries.mjs       # Node script to verify DB connection and CRUD
+proxy.ts                # Staff-gates everything except /register, /login, /api/auth, POST /api/entries
+supabase/migrations/    # SQL migrations
+scripts/                # setup_entries.sql, test-entries.mjs, export-entries-csv.mjs
 ```

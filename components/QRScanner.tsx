@@ -1,249 +1,215 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-
-interface Adult {
-  name: string;
-}
-
-interface Kid {
-  name: string;
-  age: number;
-}
-
-interface Entry {
-  id: string;
-  adults: Adult[];
-  kids: Kid[];
-  number: string | null;
-  checkedin: boolean;
-  created_at: string;
-}
+import { useCallback, useEffect, useRef, useState } from "react";
+import { EVENT } from "@/utils/event";
+import { formatPhone, type Entry } from "@/utils/entry";
 
 type ScanState =
   | { status: "idle" }
   | { status: "scanning" }
-  | { status: "loading" }
-  | { status: "not_found"; scannedId: string }
-  | { status: "found"; entry: Entry }
-  | { status: "just_checked_in"; entry: Entry }
-  | { status: "checked_in"; entry: Entry };
+  | { status: "checking" }
+  | { status: "success"; entry: Entry }
+  | { status: "already_scanned"; entry: Entry }
+  | { status: "invalid"; scanned: string }
+  | { status: "error"; id: string; message: string }
+  | { status: "camera_error"; message: string };
 
-function adultNames(entry: Entry): string {
-  return (entry.adults ?? []).map((a) => a.name).join(" & ") || "Guest";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function scannedAt(entry: Entry): string | null {
+  if (!entry.checked_in_at) return null;
+  return new Date(entry.checked_in_at).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 }
 
-function FamilyDetails({ entry }: { entry: Entry }) {
-  const kidsLine = (entry.kids ?? []).map((k) => `${k.name} (${k.age})`).join(", ");
+function GuestDetails({ entry }: { entry: Entry }) {
+  const sub = "text-cream/80";
   return (
-    <>
-      {kidsLine && <p className="text-[#5B4B3A] text-sm">Kids: {kidsLine}</p>}
-      {entry.number && <p className="text-[#5B4B3A] text-sm">{entry.number}</p>}
-    </>
+    <div className="mt-5 space-y-0.5">
+      <p className="break-words font-serif text-3xl leading-tight">{entry.name}</p>
+      <p className={`text-sm ${sub}`}>{formatPhone(entry.number)}</p>
+      <p className={`break-all text-sm ${sub}`}>{entry.email}</p>
+    </div>
   );
 }
 
+// Scanning a pass checks the guest in immediately. The API only flips
+// checkedin false → true, so a second scan (from any device) comes back
+// as "already scanned".
 export default function QRScanner() {
   const scannerRef = useRef<InstanceType<typeof import("html5-qrcode").Html5Qrcode> | null>(null);
-  const [state, setState] = useState<ScanState>({ status: "idle" });
-  const [checkingIn, setCheckingIn] = useState(false);
   const isProcessing = useRef(false);
+  const [state, setState] = useState<ScanState>({ status: "idle" });
 
   const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        const scannerState = scannerRef.current.getState();
-        if (scannerState === 2) {
-          await scannerRef.current.stop();
-        }
-      } catch {
-        // ignore stop errors
-      }
-      scannerRef.current = null;
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+    if (!scanner) return;
+    try {
+      if (scanner.isScanning) await scanner.stop();
+      scanner.clear();
+    } catch {
+      // ignore stop errors
     }
   }, []);
 
-  const startScanner = useCallback(async () => {
-    setState({ status: "scanning" });
-    isProcessing.current = false;
-
-    const { Html5Qrcode } = await import("html5-qrcode");
-    scannerRef.current = new Html5Qrcode("qr-reader");
-
-    await scannerRef.current.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      async (decodedText) => {
-        if (isProcessing.current) return;
-        isProcessing.current = true;
-
-        await stopScanner();
-        setState({ status: "loading" });
-
-        const uuid = decodedText.trim();
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-        if (!uuidRegex.test(uuid)) {
-          setState({ status: "not_found", scannedId: uuid });
-          return;
-        }
-
-        try {
-          const res = await fetch(`/api/entries/${uuid}`);
-          if (!res.ok) {
-            setState({ status: "not_found", scannedId: uuid });
-            return;
-          }
-          const entry: Entry = await res.json();
-          setState(entry.checkedin ? { status: "checked_in", entry } : { status: "found", entry });
-        } catch {
-          setState({ status: "not_found", scannedId: uuid });
-        }
-      },
-      undefined
-    );
-  }, [stopScanner]);
-
-  useEffect(() => {
-    return () => { stopScanner(); };
-  }, [stopScanner]);
-
-  const handleCheckIn = async () => {
-    if (state.status !== "found") return;
-    setCheckingIn(true);
+  const checkIn = useCallback(async (id: string) => {
+    setState({ status: "checking" });
     try {
-      const res = await fetch(`/api/entries/${state.entry.id}`, { method: "PATCH" });
+      const res = await fetch(`/api/entries/${id}`, { method: "PATCH" });
       const body = await res.json();
       if (res.ok) {
-        setState({ status: "just_checked_in", entry: body });
+        navigator.vibrate?.(120);
+        setState({ status: "success", entry: body });
       } else if (res.status === 409 && body.entry) {
-        // Someone else redeemed this code a moment before us.
-        setState({ status: "checked_in", entry: body.entry });
+        navigator.vibrate?.([120, 80, 120, 80, 120]);
+        setState({ status: "already_scanned", entry: body.entry });
+      } else if (res.status === 404) {
+        setState({ status: "invalid", scanned: id });
+      } else {
+        setState({ status: "error", id, message: body.error || "Check-in failed" });
       }
-      // else: keep state, let user retry
     } catch {
-      // keep state, let user retry
-    } finally {
-      setCheckingIn(false);
+      setState({ status: "error", id, message: "Couldn't reach the server. Check the connection and retry." });
     }
-  };
+  }, []);
 
-  const reset = () => {
-    setState({ status: "idle" });
+  // Start the camera once the #qr-reader element is on screen; stop it
+  // whenever we leave the scanning state.
+  useEffect(() => {
+    if (state.status !== "scanning") return;
+    let cancelled = false;
     isProcessing.current = false;
-  };
+
+    (async () => {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      if (cancelled) return;
+      const scanner = new Html5Qrcode("qr-reader");
+      scannerRef.current = scanner;
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          (decodedText) => {
+            if (isProcessing.current) return;
+            isProcessing.current = true;
+            const id = decodedText.trim();
+            if (UUID_RE.test(id)) {
+              checkIn(id);
+            } else {
+              setState({ status: "invalid", scanned: id });
+            }
+          },
+          undefined
+        );
+        if (cancelled) stopScanner();
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            status: "camera_error",
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [state.status, checkIn, stopScanner]);
+
+  const scanNext = () => setState({ status: "scanning" });
 
   return (
-    <div className="space-y-6">
-      {(state.status === "idle") && (
-        <div className="text-center space-y-4">
-          <div className="text-6xl">📷</div>
-          <p className="text-[#5B4B3A]">Ready to scan a VIP QR code</p>
-          <button
-            onClick={startScanner}
-            className="px-8 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 transition"
-          >
-            Start Scanner
+    <div className="space-y-4">
+      {state.status === "idle" && (
+        <div className="card px-6 py-12 text-center">
+          <p className="font-serif text-2xl text-ink">Ready at the door?</p>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-umber">
+            Point the camera at a guest&apos;s pass. They&apos;re checked in the moment it scans.
+          </p>
+          <button onClick={scanNext} className="btn-primary mx-auto mt-6 max-w-xs">
+            Start scanning
           </button>
         </div>
       )}
 
       {state.status === "scanning" && (
-        <div className="space-y-4">
-          <div id="qr-reader" className="rounded-2xl overflow-hidden w-full max-w-sm mx-auto" />
-          <button
-            onClick={async () => { await stopScanner(); setState({ status: "idle" }); }}
-            className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition"
-          >
-            Cancel
+        <div className="space-y-3">
+          <div id="qr-reader" className="mx-auto w-full max-w-sm overflow-hidden border border-rule bg-navy" />
+          <button onClick={() => setState({ status: "idle" })} className="btn-secondary">
+            Stop camera
           </button>
         </div>
       )}
 
-      {state.status === "loading" && (
-        <div className="text-center py-12 space-y-3">
-          <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-[#5B4B3A]">Looking up entry...</p>
+      {state.status === "checking" && (
+        <div className="card space-y-3 py-14 text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-navy border-t-transparent" />
+          <p className="text-umber">Checking pass…</p>
         </div>
       )}
 
-      {state.status === "not_found" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-center">
-            <div className="text-4xl mb-3">❌</div>
-            <p className="text-red-700 font-semibold text-lg">Invalid QR Code</p>
-            <p className="text-red-500 text-sm mt-1 font-mono break-all">{state.scannedId}</p>
-            <p className="text-red-400 text-sm mt-1">No entry found with this ID</p>
-          </div>
-          <button onClick={reset} className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition">
-            Scan Again
-          </button>
-        </div>
-      )}
-
-      {state.status === "found" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-green-50 border border-green-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-lg">✓</div>
-              <div>
-                <p className="text-green-700 font-semibold">Valid VIP Entry</p>
-                <p className="text-green-500 text-xs">Not yet checked in</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[#2B2420] font-semibold text-lg">{adultNames(state.entry)}</p>
-              <FamilyDetails entry={state.entry} />
+      {state.status === "success" && (
+        <div className="bg-forest px-6 py-8 text-cream" role="status">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-cream text-2xl text-forest">✓</span>
+            <div>
+              <p className="font-serif text-3xl leading-none">Success</p>
+              <p className="eyebrow mt-1.5 text-cream/80">Checked in · {scannedAt(state.entry)}</p>
             </div>
           </div>
-          <button
-            onClick={handleCheckIn}
-            disabled={checkingIn}
-            className="w-full py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-50 transition"
-          >
-            {checkingIn ? "Checking in..." : "Check In"}
-          </button>
-          <button onClick={reset} className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition">
-            Scan Another
+          <GuestDetails entry={state.entry} />
+        </div>
+      )}
+
+      {state.status === "already_scanned" && (
+        <div className="bg-brick px-6 py-8 text-cream" role="alert">
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-cream text-2xl font-bold text-brick">!</span>
+            <div>
+              <p className="font-serif text-3xl leading-none">Already scanned</p>
+              <p className="eyebrow mt-1.5 text-cream/80">
+                {scannedAt(state.entry) ? `First scanned at ${scannedAt(state.entry)}` : "This pass has been used"}
+              </p>
+            </div>
+          </div>
+          <GuestDetails entry={state.entry} />
+        </div>
+      )}
+
+      {state.status === "invalid" && (
+        <div className="card border-l-4 border-l-brick px-6 py-7" role="alert">
+          <p className="font-serif text-2xl text-brick">Not a valid pass</p>
+          <p className="mt-1 text-sm text-umber">This QR code isn&apos;t a {EVENT.name} registration.</p>
+          <p className="mt-3 break-all font-mono text-xs text-sand">{state.scanned}</p>
+        </div>
+      )}
+
+      {state.status === "error" && (
+        <div className="space-y-3">
+          <div className="alert-error">{state.message}</div>
+          <button onClick={() => checkIn(state.id)} className="btn-primary">
+            Retry check-in
           </button>
         </div>
       )}
 
-      {state.status === "just_checked_in" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-green-50 border border-green-200 p-6 text-center">
-            <div className="text-5xl mb-3">🎉</div>
-            <p className="text-green-700 font-bold text-2xl">Welcome, {adultNames(state.entry)}!</p>
-            <p className="text-green-600 text-sm mt-1">Checked in successfully</p>
-            <div className="mt-4 space-y-1">
-              <FamilyDetails entry={state.entry} />
-            </div>
-          </div>
-          <button onClick={reset} className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition">
-            Scan Another
-          </button>
+      {state.status === "camera_error" && (
+        <div className="alert-error">
+          Couldn&apos;t start the camera — allow camera access for this site and try again.
+          <span className="mt-1 block text-xs opacity-80">{state.message}</span>
         </div>
       )}
 
-      {state.status === "checked_in" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-lg">⚠️</div>
-              <div>
-                <p className="text-amber-700 font-semibold">Already Checked In</p>
-                <p className="text-amber-500 text-xs">This VIP has already entered</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[#2B2420] font-semibold text-lg">{adultNames(state.entry)}</p>
-              <FamilyDetails entry={state.entry} />
-            </div>
-          </div>
-          <button onClick={reset} className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition">
-            Scan Another
-          </button>
-        </div>
+      {["success", "already_scanned", "invalid", "error", "camera_error"].includes(state.status) && (
+        <button onClick={scanNext} className="btn-primary">
+          Scan next pass
+        </button>
       )}
     </div>
   );

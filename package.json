@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:entries": "node scripts/test-entries.mjs"
+    "test:entries": "node scripts/test-entries.mjs",
+    "export:entries": "node scripts/export-entries-csv.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -1,36 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import { cleanAdults, cleanKids, type Adult, type Kid } from "@/utils/validate-entry";
+import { cleanEntryInput } from "@/utils/entry";
+
+const SEARCH_LIMIT = 50;
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
 
-  const { adults, kids, number } = body;
-
-  const cleanedAdults = cleanAdults(adults);
-  if (typeof cleanedAdults === "string") {
-    return NextResponse.json({ error: cleanedAdults }, { status: 400 });
-  }
-  const cleanedKids = cleanKids(kids);
-  if (typeof cleanedKids === "string") {
-    return NextResponse.json({ error: cleanedKids }, { status: 400 });
-  }
-  if (!number?.trim()) {
-    return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("entries")
-    .insert({
-      adults: cleanedAdults,
-      kids: cleanedKids,
-      number: number.trim(),
-    })
-    .select()
-    .single();
+  const input = cleanEntryInput(body);
+  if (typeof input === "string") {
+    return NextResponse.json({ error: input }, { status: 400 });
+  }
+
+  const { data, error } = await supabase.from("entries").insert(input).select().single();
 
   if (error) {
     if (error.code === "23505") {
@@ -42,37 +31,34 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(data, { status: 201 });
 }
 
+// Admin search. Filtering happens in Postgres — PostgREST caps responses
+// at 1,000 rows, so fetching everything and filtering here would silently
+// miss older registrations.
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  const { data, error } = await supabase
+  // Strip characters that have meaning inside a PostgREST or() filter.
+  const q = (request.nextUrl.searchParams.get("q") ?? "").replace(/[,()"\\%*]/g, " ").trim();
+
+  let query = supabase
     .from("entries")
     .select()
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(SEARCH_LIMIT);
+
+  if (q) {
+    const digits = q.replace(/[\s+\-]/g, "");
+    const numberTerm = /^\d{3,}$/.test(digits) ? digits : q;
+    // `*` is PostgREST's URL-safe alias for the `%` wildcard.
+    query = query.or(`name.ilike.*${q}*,email.ilike.*${q}*,number.ilike.*${numberTerm}*`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const q = request.nextUrl.searchParams.get("q")?.trim().toLowerCase();
-  if (!q) {
-    return NextResponse.json(data);
-  }
-
-  const matches = (data ?? []).filter((entry) => {
-    const haystack = [
-      entry.number,
-      entry.name,
-      entry.child_name,
-      ...((entry.adults ?? []) as Adult[]).map((a) => a.name),
-      ...((entry.kids ?? []) as Kid[]).map((k) => k.name),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(q);
-  });
-
-  return NextResponse.json(matches);
+  return NextResponse.json(data);
 }

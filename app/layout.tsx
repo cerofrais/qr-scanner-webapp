@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Fraunces } from "next/font/google";
+import { Lora, Poppins } from "next/font/google";
 import "./globals.css";
-import SiteChrome from "@/components/SiteChrome";
+import { EVENT } from "@/utils/event";
 
-const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });
+const lora = Lora({ variable: "--font-lora", subsets: ["latin"] });
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  title: "LateCheckout x LittlePreneurs",
-  description: "VIP entry management with QR codes for LateCheckout x LittlePreneurs",
+  title: `${EVENT.name} · ${EVENT.presenter}`,
+  description: `${EVENT.tagline} ${EVENT.dateLong}, ${EVENT.hours} at ${EVENT.venue}, ${EVENT.city}.`,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} ${fraunces.variable} h-full antialiased`}>
-      <body className="min-h-screen bg-[#FBF1E3] flex flex-col">
-        <SiteChrome>{children}</SiteChrome>
-      </body>
+    <html lang="en" className={`${lora.variable} ${poppins.variable} h-full antialiased`}>
+      <body className="flex min-h-screen flex-col">{children}</body>
     </html>
   );
 }

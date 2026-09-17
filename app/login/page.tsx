@@ -2,6 +2,8 @@
 
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Mosaic from "@/components/Mosaic";
+import { EVENT } from "@/utils/event";
 
 function LoginForm() {
   const [passcode, setPasscode] = useState("");
@@ -9,7 +11,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/onboard";
+  const next = searchParams.get("next") || "/verify";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,23 +40,22 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-[#5B4B3A] mb-1">Admin Passcode</label>
+        <label htmlFor="passcode" className="field-label">
+          Staff passcode
+        </label>
         <input
+          id="passcode"
           type="password"
           value={passcode}
           onChange={(e) => setPasscode(e.target.value)}
           required
           autoFocus
           placeholder="Enter passcode"
-          className="w-full px-4 py-2.5 rounded-xl border border-[#E8D9C3] bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#2B2420] placeholder-[#B5A88F]"
+          className="field"
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-      >
+      {error && <div className="alert-error">{error}</div>}
+      <button type="submit" disabled={loading} className="btn-primary">
         {loading ? "Verifying…" : "Enter"}
       </button>
     </form>
@@ -63,15 +64,20 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[50vh] flex items-center justify-center">
-      <div className="bg-white rounded-2xl border border-[#F0DFC4] p-8 w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="font-serif text-xl font-bold text-[#2B2420]">Admin Access</h1>
-          <p className="text-sm text-[#5B4B3A] mt-1">Enter the passcode to continue</p>
+    <div className="bg-grid flex flex-1 items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-end justify-between text-cream">
+          <div>
+            <p className="eyebrow text-gold">Staff access</p>
+            <p className="mt-1 font-serif text-5xl leading-none">{EVENT.name}</p>
+          </div>
+          <Mosaic size={18} gap={4} />
         </div>
-        <Suspense>
-          <LoginForm />
-        </Suspense>
+        <div className="card p-6">
+          <Suspense>
+            <LoginForm />
+          </Suspense>
+        </div>
       </div>
     </div>
   );

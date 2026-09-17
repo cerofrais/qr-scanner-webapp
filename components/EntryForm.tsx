@@ -1,91 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import QRCodeDisplay from "./QRCodeDisplay";
+import { useEffect, useRef, useState } from "react";
+import EventPass from "./EventPass";
+import WelcomeNote from "./WelcomeNote";
+import { DEFAULT_COUNTRY_CODE, type Entry } from "@/utils/entry";
 
-interface Adult {
-  name: string;
-}
-
-interface Kid {
-  name: string;
-  age: number;
-}
-
-interface Entry {
-  id: string;
-  adults: Adult[];
-  kids: Kid[];
-  number: string | null;
-  checkedin: boolean;
-  created_at: string;
-}
-
-const MAX_ADULTS = 2;
-const MAX_KIDS = 3;
-
-export default function EntryForm({ accent = "violet" }: { accent?: "violet" | "coral" }) {
-  const [adults, setAdults] = useState([{ name: "" }]);
-  const [kids, setKids] = useState([{ name: "", age: "" }]);
+// `guest` is the public /register flow (welcome note after submit);
+// `staff` is the /onboard flow (register-another loop).
+export default function EntryForm({ variant = "staff" }: { variant?: "guest" | "staff" }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [number, setNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Entry | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
-  const isCoral = accent === "coral";
-  const labelClass = "block text-sm font-medium text-[#5B4B3A] mb-1";
-  const sectionLabelClass = "text-sm font-semibold text-[#2B2420]";
-  const hintClass = "text-xs text-[#5B4B3A]";
-  const secondaryButtonClass = "w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition";
-  const removeButtonClass = isCoral
-    ? "text-[#B5A88F] hover:text-[#D8624A]"
-    : "text-[#B5A88F] hover:text-red-500";
-  const inputClass = isCoral
-    ? "w-full px-4 py-2.5 rounded-xl border border-[#E8D9C3] bg-white focus:outline-none focus:ring-2 focus:ring-[#E8735A] focus:border-transparent text-[#2B2420] placeholder-[#B5A88F]"
-    : "w-full px-4 py-2.5 rounded-xl border border-[#E8D9C3] bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#2B2420] placeholder-[#B5A88F]";
-  const buttonClass = isCoral
-    ? "w-full py-3 rounded-xl bg-[#E8735A] text-white font-semibold hover:bg-[#D8624A] disabled:opacity-50 disabled:cursor-not-allowed transition"
-    : "w-full py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition";
-  const addButtonClass = isCoral
-    ? "text-sm font-medium text-[#E8735A] hover:text-[#D8624A]"
-    : "text-sm font-medium text-violet-600 hover:text-violet-700";
+  const isGuest = variant === "guest";
 
-  const updateAdult = (i: number, name: string) => {
-    setAdults((prev) => prev.map((a, idx) => (idx === i ? { name } : a)));
-  };
-  const addAdult = () => {
-    if (adults.length < MAX_ADULTS) setAdults((prev) => [...prev, { name: "" }]);
-  };
-  const removeAdult = (i: number) => {
-    setAdults((prev) => prev.filter((_, idx) => idx !== i));
-  };
-
-  const updateKid = (i: number, field: "name" | "age", value: string) => {
-    setKids((prev) => prev.map((k, idx) => (idx === i ? { ...k, [field]: value } : k)));
-  };
-  const addKid = () => {
-    if (kids.length < MAX_KIDS) setKids((prev) => [...prev, { name: "", age: "" }]);
-  };
-  const removeKid = (i: number) => {
-    setKids((prev) => prev.filter((_, idx) => idx !== i));
-  };
+  useEffect(() => {
+    if (created) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [created]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
+    // A number pasted with its own "+code" wins over the code box.
+    const local = number.trim();
+    const fullNumber = local.startsWith("+") ? local : `${countryCode}${local.replace(/^0+/, "")}`;
+
     try {
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adults, kids, number }),
+        body: JSON.stringify({ name, email, number: fullNumber }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create entry");
+      if (!res.ok) throw new Error(data.error || "Registration failed");
       setCreated(data);
-      setAdults([{ name: "" }]);
-      setKids([{ name: "", age: "" }]);
+      setName("");
+      setEmail("");
+      setCountryCode(DEFAULT_COUNTRY_CODE);
       setNumber("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -96,116 +54,92 @@ export default function EntryForm({ accent = "violet" }: { accent?: "violet" | "
 
   if (created) {
     return (
-      <div className="space-y-6">
-        <div className="rounded-2xl bg-green-50 border border-green-200 p-6 text-center">
-          <p className="text-green-700 font-semibold text-lg mb-1">Entry created!</p>
-          <p className="text-green-600 text-sm">Share or print this QR code for your family</p>
-        </div>
-        <QRCodeDisplay entry={created} />
-        <button onClick={() => setCreated(null)} className={secondaryButtonClass}>
-          Add Another Entry
+      <div ref={topRef} className="scroll-mt-6 space-y-5">
+        {isGuest ? (
+          <WelcomeNote name={created.name} />
+        ) : (
+          <div className="alert-ok">
+            Registered <strong className="font-semibold">{created.name}</strong>. Hand over or print the pass below.
+          </div>
+        )}
+        <EventPass entry={created} />
+        <button
+          onClick={() => setCreated(null)}
+          className={isGuest ? "w-full py-2 text-sm text-umber underline underline-offset-4 hover:text-ink" : "btn-secondary"}
+        >
+          {isGuest ? "Register someone else" : "Register another guest"}
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className={sectionLabelClass}>Adults</span>
-          {adults.length < MAX_ADULTS && (
-            <button type="button" onClick={addAdult} className={addButtonClass}>
-              + Add adult
-            </button>
-          )}
-        </div>
-        {adults.map((adult, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={adult.name}
-              onChange={(e) => updateAdult(i, e.target.value)}
-              required
-              placeholder={i === 0 ? "e.g. John Smith" : "e.g. Jane Smith"}
-              className={inputClass}
-            />
-            {adults.length > 1 && (
-              <button type="button" onClick={() => removeAdult(i)} className={removeButtonClass} aria-label="Remove adult">
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
-        <p className={hintClass}>Up to {MAX_ADULTS} adults per registration.</p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className={sectionLabelClass}>Kids</span>
-          {kids.length < MAX_KIDS && (
-            <button type="button" onClick={addKid} className={addButtonClass}>
-              + Add kid
-            </button>
-          )}
-        </div>
-        {kids.map((kid, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={kid.name}
-              onChange={(e) => updateKid(i, "name", e.target.value)}
-              required
-              placeholder="Child's name"
-              className={inputClass}
-            />
-            <input
-              type="number"
-              value={kid.age}
-              onChange={(e) => updateKid(i, "age", e.target.value)}
-              required
-              min={0}
-              placeholder="Age"
-              className={`${inputClass} w-24`}
-            />
-            {kids.length > 1 && (
-              <button type="button" onClick={() => removeKid(i)} className={removeButtonClass} aria-label="Remove kid">
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
-        {kids.length >= MAX_KIDS ? (
-          <p className={hintClass}>
-            Registering more than {MAX_KIDS} kids? Please contact the admin to get them added.
-          </p>
-        ) : (
-          <p className={hintClass}>Up to {MAX_KIDS} kids per registration.</p>
-        )}
-      </div>
+    <form onSubmit={handleSubmit} className={`space-y-5 ${isGuest ? "card border-t-4 border-t-navy p-5 sm:p-7" : ""}`}>
+      {error && <div className="alert-error">{error}</div>}
 
       <div>
-        <label className={labelClass}>
-          Phone Number <span className="text-red-500">*</span>
+        <label htmlFor="entry-name" className="field-label">
+          Full name
         </label>
         <input
-          type="tel"
-          value={number}
-          onChange={(e) => setNumber(e.target.value)}
+          id="entry-name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
-          placeholder="e.g. +1 555 000 0000"
-          className={inputClass}
+          autoComplete="name"
+          placeholder="e.g. Ananya Rao"
+          className="field"
         />
       </div>
 
-      <button type="submit" disabled={loading} className={buttonClass}>
-        {loading ? "Creating..." : "Create Entry & Generate QR"}
+      <div>
+        <label htmlFor="entry-email" className="field-label">
+          Email
+        </label>
+        <input
+          id="entry-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          className="field"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="entry-number" className="field-label">
+          Phone number
+        </label>
+        <div className="flex">
+          <input
+            type="text"
+            value={countryCode}
+            onChange={(e) => setCountryCode(`+${e.target.value.replace(/\D/g, "").slice(0, 3)}`)}
+            aria-label="Country code"
+            autoComplete="tel-country-code"
+            inputMode="tel"
+            className="field w-[4.5rem] shrink-0 border-r-0 bg-cream/60 px-2 text-center font-medium"
+          />
+          <input
+            id="entry-number"
+            type="tel"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            required
+            autoComplete="tel-national"
+            inputMode="tel"
+            placeholder="98765 43210"
+            className="field"
+          />
+        </div>
+        <p className="mt-1.5 text-xs text-sand">One pass per phone number.</p>
+      </div>
+
+      <button type="submit" disabled={loading} className="btn-primary">
+        {loading ? "Creating your pass…" : isGuest ? "Get my pass" : "Register & generate pass"}
       </button>
     </form>
   );

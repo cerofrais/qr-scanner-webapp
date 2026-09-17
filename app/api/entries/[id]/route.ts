@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import { cleanAdults, cleanKids } from "@/utils/validate-entry";
+import { cleanEntryInput } from "@/utils/entry";
 
 export async function GET(
   _request: NextRequest,
@@ -42,7 +42,7 @@ export async function PATCH(
     // redeemed exactly once even under concurrent scans of the same code.
     const { data, error } = await supabase
       .from("entries")
-      .update({ checkedin: true })
+      .update({ checkedin: true, checked_in_at: new Date().toISOString() })
       .eq("id", id)
       .eq("checkedin", false)
       .select()
@@ -68,30 +68,23 @@ export async function PATCH(
   }
 
   // Admin edit path — update whichever fields were provided.
-  const update: Record<string, unknown> = {};
+  const input = cleanEntryInput(body, { partial: true });
+  if (typeof input === "string") {
+    return NextResponse.json({ error: input }, { status: 400 });
+  }
 
-  if ("adults" in body) {
-    const cleaned = cleanAdults(body.adults);
-    if (typeof cleaned === "string") {
-      return NextResponse.json({ error: cleaned }, { status: 400 });
-    }
-    update.adults = cleaned;
-  }
-  if ("kids" in body) {
-    const cleaned = cleanKids(body.kids);
-    if (typeof cleaned === "string") {
-      return NextResponse.json({ error: cleaned }, { status: 400 });
-    }
-    update.kids = cleaned;
-  }
-  if ("number" in body) {
-    if (!body.number?.trim()) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-    }
-    update.number = body.number.trim();
-  }
+  const update: Record<string, unknown> = { ...input };
+
   if ("checkedin" in body && typeof body.checkedin === "boolean") {
+    const { data: current } = await supabase
+      .from("entries")
+      .select("checkedin")
+      .eq("id", id)
+      .single();
     update.checkedin = body.checkedin;
+    if (body.checkedin !== current?.checkedin) {
+      update.checked_in_at = body.checkedin ? new Date().toISOString() : null;
+    }
   }
 
   if (Object.keys(update).length === 0) {

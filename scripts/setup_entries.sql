@@ -1,19 +1,15 @@
--- Create the table expected by the app API routes.
+-- Standalone schema for a fresh Supabase project (equivalent to running
+-- every file in supabase/migrations/). Paste into the SQL Editor.
 create extension if not exists pgcrypto;
 
 create table if not exists public.entries (
   id uuid primary key default gen_random_uuid(),
-  adults jsonb not null default '[]'::jsonb,
-  kids jsonb not null default '[]'::jsonb,
-  number text,
+  name text not null,
+  email text not null,
+  number text not null,  -- E.164, e.g. +919876543210
   checkedin boolean not null default false,
-  created_at timestamptz not null default now(),
-  -- Legacy columns from the single adult/child schema; unused by the
-  -- app but kept nullable in case older data still references them.
-  name text,
-  email text,
-  child_name text,
-  age integer
+  checked_in_at timestamptz,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists entries_created_at_idx on public.entries (created_at desc);
@@ -49,3 +45,15 @@ create policy "entries_delete_all"
   for delete
   to anon, authenticated
   using (true);
+
+-- Past-event registrations, snapshotted as jsonb. No policies, so the
+-- public key can't read it.
+create table if not exists public.entries_archive (
+  id uuid primary key,
+  event text not null,
+  data jsonb not null,
+  created_at timestamptz,
+  archived_at timestamptz not null default now()
+);
+
+alter table public.entries_archive enable row level security;

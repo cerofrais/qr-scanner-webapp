@@ -4,8 +4,8 @@ import { useState, useRef, DragEvent } from "react";
 import * as XLSX from "xlsx";
 
 interface ParsedRow {
-  adults: { name: string }[];
-  kids: { name: string; age: string }[];
+  name: string;
+  email: string;
   number: string;
 }
 
@@ -13,6 +13,10 @@ interface UploadResult {
   success: number;
   errors: { row: number; name: string; error: string }[];
 }
+
+const Code = ({ children }: { children: React.ReactNode }) => (
+  <code className="bg-cream px-1 font-mono text-[0.7rem] text-ink-soft">{children}</code>
+);
 
 export default function ExcelUpload() {
   const [rows, setRows] = useState<ParsedRow[]>([]);
@@ -45,23 +49,12 @@ export default function ExcelUpload() {
         const parsed: ParsedRow[] = raw.map((r) => {
           const find = (key: string) =>
             Object.entries(r).find(([k]) => k.toLowerCase().trim() === key)?.[1]?.toString().trim() ?? "";
-
-          const adults = [find("adult1_name"), find("adult2_name")]
-            .filter((name) => name)
-            .map((name) => ({ name }));
-
-          const kids = [1, 2, 3]
-            .map((n) => ({ name: find(`kid${n}_name`), age: find(`kid${n}_age`) }))
-            .filter((k) => k.name);
-
-          return { adults, kids, number: find("number") };
+          return { name: find("name"), email: find("email"), number: find("number") };
         });
 
-        const valid = parsed.filter((r) => r.adults.length > 0 && r.kids.length > 0 && r.number);
+        const valid = parsed.filter((r) => r.name && r.email && r.number);
         if (valid.length === 0) {
-          setParseError(
-            'No valid rows found. Ensure the sheet has "adult1_name", "kid1_name", "kid1_age", and "number" columns with values.'
-          );
+          setParseError('No valid rows found. Ensure the sheet has "name", "email" and "number" columns with values.');
           return;
         }
 
@@ -87,7 +80,6 @@ export default function ExcelUpload() {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const label = row.adults.map((a) => a.name).join(" & ");
       try {
         const res = await fetch("/api/entries", {
           method: "POST",
@@ -98,10 +90,10 @@ export default function ExcelUpload() {
           success++;
         } else {
           const d = await res.json();
-          errors.push({ row: i + 1, name: label, error: d.error || "Failed" });
+          errors.push({ row: i + 1, name: row.name, error: d.error || "Failed" });
         }
       } catch {
-        errors.push({ row: i + 1, name: label, error: "Network error" });
+        errors.push({ row: i + 1, name: row.name, error: "Network error" });
       }
     }
 
@@ -121,25 +113,23 @@ export default function ExcelUpload() {
   if (result) {
     return (
       <div className="space-y-4">
-        <div className={`rounded-2xl p-5 border ${result.errors.length === 0 ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"}`}>
-          <p className={`font-semibold text-lg ${result.errors.length === 0 ? "text-green-700" : "text-yellow-700"}`}>
-            {result.success} entr{result.success === 1 ? "y" : "ies"} imported successfully
+        <div className={result.errors.length === 0 ? "alert-ok" : "alert-error"}>
+          <p className="font-semibold">
+            {result.success} registration{result.success === 1 ? "" : "s"} imported
+            {result.errors.length > 0 && `, ${result.errors.length} failed`}
           </p>
           {result.errors.length > 0 && (
             <ul className="mt-2 space-y-1">
               {result.errors.map((e) => (
-                <li key={e.row} className="text-sm text-yellow-700">
+                <li key={e.row}>
                   Row {e.row} ({e.name}): {e.error}
                 </li>
               ))}
             </ul>
           )}
         </div>
-        <button
-          onClick={reset}
-          className="w-full py-2.5 rounded-xl border border-[#E8D9C3] text-[#5B4B3A] hover:bg-[#FBF1E3] transition"
-        >
-          Upload Another File
+        <button onClick={reset} className="btn-secondary">
+          Upload another file
         </button>
       </div>
     );
@@ -148,12 +138,15 @@ export default function ExcelUpload() {
   return (
     <div className="space-y-5">
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`rounded-2xl border-2 border-dashed cursor-pointer p-10 text-center transition ${
-          dragging ? "border-violet-500 bg-violet-50" : "border-[#E8D9C3] hover:border-violet-400 hover:bg-[#FBF1E3]"
+        className={`cursor-pointer border-2 border-dashed p-8 text-center transition ${
+          dragging ? "border-navy bg-cream" : "border-rule bg-white hover:border-taupe"
         }`}
       >
         <input
@@ -161,67 +154,54 @@ export default function ExcelUpload() {
           type="file"
           accept=".xlsx,.xls,.csv"
           className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f); }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) parseFile(f);
+          }}
         />
-        <div className="text-4xl mb-3">📂</div>
-        <p className="text-[#5B4B3A] font-medium">
-          {fileName ? fileName : "Drop your file here or click to browse"}
-        </p>
-        <p className="text-sm text-[#B5A88F] mt-1">Supports .xlsx, .xls, .csv</p>
-        <p className="text-xs text-[#B5A88F] mt-3">
-          Required columns: <code className="bg-[#F0DFC4]/50 px-1 rounded">adult1_name</code>,{" "}
-          <code className="bg-[#F0DFC4]/50 px-1 rounded">kid1_name</code>,{" "}
-          <code className="bg-[#F0DFC4]/50 px-1 rounded">kid1_age</code>,{" "}
-          <code className="bg-[#F0DFC4]/50 px-1 rounded">number</code>
-          <br />
-          Optional: <code className="bg-[#F0DFC4]/50 px-1 rounded">adult2_name</code>,{" "}
-          <code className="bg-[#F0DFC4]/50 px-1 rounded">kid2_name</code> / <code className="bg-[#F0DFC4]/50 px-1 rounded">kid2_age</code>,{" "}
-          <code className="bg-[#F0DFC4]/50 px-1 rounded">kid3_name</code> / <code className="bg-[#F0DFC4]/50 px-1 rounded">kid3_age</code>
+        <p className="font-serif text-xl text-ink">{fileName ?? "Drop a spreadsheet here"}</p>
+        <p className="mt-1 text-sm text-umber">or click to browse · .xlsx, .xls, .csv</p>
+        <p className="mt-4 text-xs text-sand">
+          Columns: <Code>name</Code>, <Code>email</Code>, <Code>number</Code>. Numbers without a country code are
+          treated as +91.
         </p>
       </div>
 
-      {parseError && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-red-700 text-sm">{parseError}</div>
-      )}
+      {parseError && <div className="alert-error">{parseError}</div>}
 
       {rows.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-[#5B4B3A]">{rows.length} rows ready to import</p>
-            <button onClick={reset} className="text-sm text-[#5B4B3A] hover:text-[#2B2420]">Clear</button>
+            <p className="text-sm font-medium text-ink-soft">{rows.length} rows ready to import</p>
+            <button onClick={reset} className="text-sm text-umber hover:text-ink">
+              Clear
+            </button>
           </div>
-          <div className="rounded-xl border border-[#F0DFC4] overflow-hidden">
-            <div className="overflow-x-auto max-h-60 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[#FBF1E3] border-b border-[#F0DFC4] sticky top-0">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium text-[#5B4B3A]">#</th>
-                    <th className="px-4 py-2 text-left font-medium text-[#5B4B3A]">Adults</th>
-                    <th className="px-4 py-2 text-left font-medium text-[#5B4B3A]">Kids</th>
-                    <th className="px-4 py-2 text-left font-medium text-[#5B4B3A]">Number</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={i} className="border-b border-[#F0DFC4] last:border-0">
-                      <td className="px-4 py-2 text-[#B5A88F]">{i + 1}</td>
-                      <td className="px-4 py-2 text-[#2B2420]">{r.adults.map((a) => a.name).join(" & ") || "—"}</td>
-                      <td className="px-4 py-2 text-[#5B4B3A]">
-                        {r.kids.map((k) => `${k.name} (${k.age})`).join(", ") || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-[#5B4B3A]">{r.number || "—"}</td>
-                    </tr>
+          <div className="max-h-60 overflow-auto border border-rule bg-white">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 border-b border-rule bg-paper">
+                <tr>
+                  {["#", "Name", "Email", "Number"].map((h) => (
+                    <th key={h} className="eyebrow px-3 py-2 text-left text-sand">
+                      {h}
+                    </th>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i} className="border-b border-rule last:border-0">
+                    <td className="px-3 py-2 text-sand">{i + 1}</td>
+                    <td className="px-3 py-2 text-ink">{r.name}</td>
+                    <td className="px-3 py-2 text-umber">{r.email}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-umber">{r.number}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={uploading}
-            className="w-full py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {uploading ? `Importing... (${rows.length} entries)` : `Import ${rows.length} Entries`}
+          <button onClick={handleSubmit} disabled={uploading} className="btn-primary">
+            {uploading ? `Importing ${rows.length} registrations…` : `Import ${rows.length} registrations`}
           </button>
         </div>
       )}
