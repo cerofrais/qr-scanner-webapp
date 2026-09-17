@@ -11,7 +11,9 @@ export const EVENT = {
   venue: "SAS I Towers",
   city: "Hyderabad",
   blurb:
-    "110 curated stalls across two lobbies, live makers, workshops, food and a band on the outdoor stage after dark.",
+    "100 curated stalls and live makers. Festive wardrobe. Handloom zone with revival sarees at weaver prices. Jewelry. Kids' zone and workshops. Cultural experiences through the day.",
+  // Sits on its own line under the blurb.
+  headliner: "Live band ft. Krithi Vangala in an A.R. Rahman tribute.",
   email: "hello@latecheckoutclub.in",
   phone: "83634 92358",
 } as const;
