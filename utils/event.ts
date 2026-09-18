@@ -12,8 +12,12 @@ export const EVENT = {
   city: "Hyderabad",
   blurb:
     "100 curated stalls and live makers. Festive wardrobe. Handloom zone with revival sarees at weaver prices. Jewelry. Kids' zone and workshops. Cultural experiences through the day.",
-  // Sits on its own line under the blurb.
-  headliner: "Live band ft. Krithi Vangala in an A.R. Rahman tribute.",
+  // Each sits on its own line under the blurb.
+  highlights: [
+    "Live band ft. Krithi Vangala in an A.R. Rahman tribute.",
+    "Kids dandiya workshop by Varsha and Meenakshi",
+    "Garba Workshop by Nicy Joseph",
+  ],
   email: "hello@latecheckoutclub.in",
   phone: "83634 92358",
 } as const;

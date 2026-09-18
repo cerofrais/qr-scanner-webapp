@@ -28,7 +28,14 @@ export default function RegisterPage() {
               <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-mist">
                 {EVENT.venue}, {EVENT.city}. {EVENT.blurb}
               </p>
-              <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-cream">{EVENT.headliner}</p>
+              <ul className="mt-2.5 max-w-xl space-y-1 text-sm leading-relaxed text-cream">
+                {EVENT.highlights.map((line) => (
+                  <li key={line} className="flex items-start gap-2.5">
+                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 bg-gold" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="hidden pb-2 sm:block">
               <Mosaic size={76} gap={10} />
