@@ -40,6 +40,13 @@ export function formatPhone(number: string): string {
   return m ? `+91 ${m[1]} ${m[2]}` : number;
 }
 
+// Indian numbers without the country code ("98765 43210"). Anything else
+// keeps its +code, since the number is ambiguous without it.
+export function localPhone(number: string): string {
+  const m = number.match(/^\+91(\d{5})(\d{5})$/);
+  return m ? `${m[1]} ${m[2]}` : number;
+}
+
 export function firstName(name: string): string {
   return name.trim().split(/\s+/)[0] ?? "";
 }

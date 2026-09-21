@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/verify", label: "Scan" },
   { href: "/onboard", label: "Register" },
   { href: "/admin", label: "Search" },
+  { href: "/guests", label: "Guests" },
 ];
 
 export default function StaffHeader() {

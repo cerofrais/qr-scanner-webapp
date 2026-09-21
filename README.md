@@ -17,6 +17,7 @@ Every page except `/register` requires staff login.
 | `/verify` | Staff | Camera scanner — scan = check in. Shows **Success** or **Already scanned** |
 | `/onboard` | Staff | Register a walk-in, or bulk-import a spreadsheet |
 | `/admin` | Staff | Search by name / email / phone; edit, reprint or delete a registration |
+| `/guests` | Staff | Every registration, newest first, 20 per page, with **Download CSV** |
 
 ### Registration
 Name, email and phone number are all required. The phone field defaults to the **+91** country code; numbers are stored in E.164 (`+919876543210`), so `98765 43210`, `+91 98765-43210` and `919876543210` are recognised as the same number. Phone numbers are unique — one pass per number.
@@ -26,6 +27,9 @@ Shows the QR code (the registration's UUID), name, phone, date and venue in the 
 
 ### Door check-in
 Scanning a pass immediately marks it checked in and records `checked_in_at`. The update only matches rows where `checkedin = false`, so two devices scanning the same pass at once can't both succeed — the second sees **Already scanned**.
+
+### Guest list & CSV export
+`/guests` lists every registration with running totals (registered / checked in). **Download CSV** calls `GET /api/entries/export`, which returns all rows in registration order — name, email, phone, check-in status and time, registration time (IST), pass ID. Names and emails starting with `= + - @` are prefixed with `'` so spreadsheets can't run guest-supplied text as formulas.
 
 ### Bulk upload
 `.xlsx`, `.xls` or `.csv` with columns `name`, `email`, `number` (see `public/sample_upload.csv`). Rows are submitted one by one; failures (e.g. duplicate numbers) are listed.
@@ -105,7 +109,7 @@ npm run test:entries    # insert → check in → second scan rejected → clean
 npm run export:entries  # all registrations → entries.csv
 ```
 
-Both scripts read `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the environment.
+Both scripts read `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SECRET_KEY` from the environment (e.g. `scripts/.env`).
 
 ---
 
@@ -126,17 +130,19 @@ The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can a
 app/
   layout.tsx            # Root: Lora + Poppins, metadata
   page.tsx              # Redirects / → /register
-  register/page.tsx     # Public: cover, form, nine moods
+  register/page.tsx     # Public: cover, registration form
   login/page.tsx        # Staff passcode
   (staff)/              # Route group — shared staff header, no URL segment
     layout.tsx
     verify/page.tsx     # Door scanner
     onboard/page.tsx    # Walk-in + bulk upload
     admin/page.tsx      # Search / edit / delete
+    guests/page.tsx     # Paginated guest list + CSV download
   api/
     auth/route.ts       # POST login / DELETE logout
     entries/
       route.ts          # POST create (public) / GET search (staff)
+      export/route.ts   # GET all registrations as CSV (staff)
       [id]/route.ts     # GET / PATCH (scan-to-check-in or edit) / DELETE
 
 components/
@@ -146,7 +152,7 @@ components/
   QRScanner.tsx         # Scan → Success / Already scanned / Not a valid pass
   AdminSearch.tsx       # Search results + edit panel
   ExcelUpload.tsx       # Bulk import
-  StaffHeader.tsx       # Staff nav (Scan · Register · Search)
+  StaffHeader.tsx       # Staff nav (Scan · Register · Search · Guests)
   PageHeader.tsx, Mosaic.tsx, LogoutButton.tsx
 
 utils/
