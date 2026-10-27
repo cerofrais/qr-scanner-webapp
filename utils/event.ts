@@ -1,24 +1,33 @@
 // Everything guest-facing about the current event lives here, so the next
 // edition is a one-file change.
 export const EVENT = {
-  name: "moodboard",
+  name: "Diwali Socials",
+  nameLead: "Diwali", // the display type splits across two lines
+  nameTail: "Socials",
+  kicker: "Pop up",
   presenter: "Late Checkout",
-  edition: "Festive season 2026 · Edition 1",
-  tagline: "A festive-season cultural pop-up by Late Checkout.",
-  dateLong: "Sunday, 27 September 2026",
-  dateShort: "Sunday, 27 September",
-  hours: "11 am to 9 pm",
-  venue: "SAS I Towers",
+  edition: "Diwali 2026",
+  tagline: "A Diwali pop-up by Late Checkout.",
+  dateLong: "Sunday, 1 November 2026",
+  dateShort: "Sunday, 1 November",
+  hours: "11 am to 8 pm",
+  venue: "AKAN",
   city: "Hyderabad",
-  blurb:
-    "100 curated stalls and live makers. Festive wardrobe. Handloom zone with revival sarees at weaver prices. Jewelry. Kids' zone and workshops. Cultural experiences through the day.",
-  // Each sits on its own line under the blurb.
-  highlights: [
-    "Live band ft. Krithi Vangala in an A.R. Rahman tribute.",
-    "Kids dandiya workshop by Varsha and Meenakshi",
-    "Garba Workshop by Nicy Joseph",
+  blurb: "A festive afternoon into evening of shopping, food and music.",
+  // The line-up from the flyer.
+  categories: [
+    "Fashion",
+    "Jewelry",
+    "Hidden finds",
+    "Accessories",
+    "Decor",
+    "Games",
+    "Sunset music",
+    "Food",
+    "Craft",
+    "Beverage",
+    "Beer and alcohol",
   ],
   email: "hello@latecheckoutclub.in",
   phone: "83634 92358",
 } as const;
-

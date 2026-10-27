@@ -146,7 +146,7 @@ export default function ExcelUpload() {
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={`cursor-pointer border-2 border-dashed p-8 text-center transition ${
-          dragging ? "border-navy bg-cream" : "border-rule bg-white hover:border-taupe"
+          dragging ? "border-maroon bg-cream" : "border-rule bg-white hover:border-taupe"
         }`}
       >
         <input

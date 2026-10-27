@@ -74,7 +74,7 @@ export default function EntryForm({ variant = "staff" }: { variant?: "guest" | "
   }
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-5 ${isGuest ? "card border-t-4 border-t-navy p-5 sm:p-7" : ""}`}>
+    <form onSubmit={handleSubmit} className={`space-y-5 ${isGuest ? "card border-t-4 border-t-maroon p-5 sm:p-7" : ""}`}>
       {error && <div className="alert-error">{error}</div>}
 
       <div>

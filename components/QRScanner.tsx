@@ -140,7 +140,7 @@ export default function QRScanner() {
 
       {state.status === "scanning" && (
         <div className="space-y-3">
-          <div id="qr-reader" className="mx-auto w-full max-w-sm overflow-hidden border border-rule bg-navy" />
+          <div id="qr-reader" className="mx-auto w-full max-w-sm overflow-hidden border border-rule bg-maroon" />
           <button onClick={() => setState({ status: "idle" })} className="btn-secondary">
             Stop camera
           </button>
@@ -149,7 +149,7 @@ export default function QRScanner() {
 
       {state.status === "checking" && (
         <div className="card space-y-3 py-14 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-navy border-t-transparent" />
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-maroon border-t-transparent" />
           <p className="text-umber">Checking pass…</p>
         </div>
       )}

@@ -5,9 +5,9 @@ export default function WelcomeNote({ name }: { name: string }) {
   const first = firstName(name);
 
   return (
-    <div className="card border-t-4 border-t-gold px-6 py-7 sm:px-8">
-      <p className="eyebrow text-brick">You&apos;re on the list</p>
-      <h2 className="mt-3 font-serif text-3xl leading-tight text-ink sm:text-4xl">
+    <div className="card border-t-4 border-t-marigold px-6 py-7 sm:px-8">
+      <p className="eyebrow text-henna">You&apos;re on the list</p>
+      <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-ink sm:text-4xl">
         Welcome to {EVENT.name}{first ? `, ${first}` : ""}.
       </h2>
       <p className="mt-4 leading-relaxed text-umber">
@@ -16,7 +16,7 @@ export default function WelcomeNote({ name }: { name: string }) {
       </p>
 
       <div className="mt-6 border-t border-rule pt-5">
-        <p className="font-serif text-2xl leading-snug text-ink">
+        <p className="font-serif text-2xl font-bold leading-snug text-ink">
           See you on <span className="whitespace-nowrap">{EVENT.dateShort}</span> at{" "}
           <span className="whitespace-nowrap">{EVENT.venue}</span>.
         </p>

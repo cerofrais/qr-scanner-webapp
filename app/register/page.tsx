@@ -1,54 +1,65 @@
 import EntryForm from "@/components/EntryForm";
-import Mosaic from "@/components/Mosaic";
+import Marigold from "@/components/Marigold";
 import { EVENT } from "@/utils/event";
 
 export default function RegisterPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Cover — mirrors the deck's navy grid title slide */}
-      <header className="bg-grid text-cream">
-        <div className="mx-auto max-w-5xl px-5 pb-10 pt-6 sm:px-8 sm:pb-16 sm:pt-10">
+      {/* Cover — the flyer's stacked display type on parchment */}
+      <header className="bg-parchment border-b-4 border-maroon">
+        <div className="mx-auto max-w-5xl px-5 pb-10 pt-6 sm:px-8 sm:pb-14 sm:pt-9">
           <div className="flex items-center justify-between gap-4">
-            <p className="eyebrow text-gold">{EVENT.presenter} presents</p>
-            <p className="eyebrow hidden text-haze sm:block">{EVENT.edition}</p>
-            <div className="sm:hidden">
-              <Mosaic size={13} gap={3} />
-            </div>
+            <p className="eyebrow text-henna">{EVENT.presenter} presents</p>
+            <p className="eyebrow hidden text-taupe sm:block">{EVENT.edition}</p>
+            <Marigold size={26} className="sm:hidden" />
           </div>
 
-          <div className="mt-6 flex flex-col gap-7 sm:mt-12 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+          <div className="mt-7 flex flex-col gap-8 sm:mt-10 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
             <div>
-              <h1 className="font-serif text-[3.9rem] leading-[0.9] tracking-tight sm:text-[6.5rem] lg:text-[7.5rem]">
-                {EVENT.name}
+              <h1 className="font-serif font-black leading-[0.82] tracking-tight">
+                <span className="display-shadow block text-[3.6rem] text-maroon sm:text-[5.6rem] lg:text-[6.4rem]">
+                  {EVENT.nameLead}
+                </span>
+                <span className="display-shadow mt-1 block text-[3rem] text-olive sm:text-[4.6rem] lg:text-[5.2rem]">
+                  {EVENT.nameTail}
+                </span>
+                <span className="mt-2 block text-2xl font-bold italic text-maroon sm:text-3xl">{EVENT.kicker}</span>
               </h1>
-              <p className="mt-4 max-w-md font-serif text-xl leading-snug text-gold sm:text-2xl">{EVENT.tagline}</p>
-              <p className="mt-6 font-serif text-lg sm:mt-7 sm:text-xl">
-                {EVENT.dateLong} · <span className="whitespace-nowrap">{EVENT.hours}</span>
-              </p>
-              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-mist">
-                {EVENT.venue}, {EVENT.city}. {EVENT.blurb}
-              </p>
-              <ul className="mt-2.5 max-w-xl space-y-1 text-sm leading-relaxed text-cream">
-                {EVENT.highlights.map((line) => (
-                  <li key={line} className="flex items-start gap-2.5">
-                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 bg-gold" />
-                    {line}
-                  </li>
+
+              <p className="mt-6 max-w-lg text-sm leading-relaxed text-ink-soft">{EVENT.blurb}</p>
+
+              <div className="mt-4 flex max-w-lg flex-wrap items-center gap-x-2 gap-y-1.5 text-sm font-medium text-henna">
+                {EVENT.categories.map((c, i) => (
+                  <span key={c} className="whitespace-nowrap">
+                    {c}
+                    {i < EVENT.categories.length - 1 && <span className="ml-2 text-marigold">·</span>}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
-            <div className="hidden pb-2 sm:block">
-              <Mosaic size={76} gap={10} />
-            </div>
+
+            <Marigold size={150} className="hidden shrink-0 sm:block" />
           </div>
+
+          <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="bg-peach px-5 py-2 font-serif text-lg font-bold text-maroon sm:text-xl">
+              {EVENT.dateLong}
+            </span>
+            <span className="font-serif text-lg font-semibold text-olive sm:text-xl">{EVENT.hours}</span>
+          </div>
+          <p className="eyebrow mt-3 text-umber">
+            {EVENT.venue}, {EVENT.city}
+          </p>
         </div>
       </header>
 
       <main className="flex-1">
-        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-x-16 lg:items-start">
+        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-x-16">
           <section className="lg:col-start-1 lg:row-start-1">
-            <p className="eyebrow text-brick">Register</p>
-            <h2 className="mt-3 font-serif text-4xl leading-tight text-ink sm:text-5xl">Get your entry pass.</h2>
+            <p className="eyebrow text-henna">Register</p>
+            <h2 className="mt-3 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
+              Get your entry pass.
+            </h2>
             <p className="mt-4 max-w-md leading-relaxed text-ink-soft">
               Share a few details and we&apos;ll generate your personal QR pass. Show it at the entrance on the day —
               one scan and you&apos;re in.
@@ -58,14 +69,13 @@ export default function RegisterPage() {
           <section className="lg:col-start-2 lg:row-start-1">
             <EntryForm variant="guest" />
           </section>
-
         </div>
       </main>
 
-      <footer className="bg-navy text-cream">
+      <footer className="bg-maroon text-cream">
         <div className="mx-auto flex max-w-5xl flex-col gap-2 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <p className="eyebrow text-haze">
-            {EVENT.name} · 27 September 2026 · {EVENT.venue}
+          <p className="eyebrow text-dusk">
+            {EVENT.name} · {EVENT.dateShort} 2026 · {EVENT.venue}
           </p>
           <p className="text-sm text-mist">
             <a href={`mailto:${EVENT.email}`} className="hover:text-cream">

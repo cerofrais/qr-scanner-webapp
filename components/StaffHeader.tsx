@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "./LogoutButton";
-import Mosaic from "./Mosaic";
+import Marigold from "./Marigold";
 import { EVENT } from "@/utils/event";
 
 const LINKS = [
@@ -18,11 +18,13 @@ export default function StaffHeader() {
 
   return (
     <header className="sticky top-0 z-10">
-      <div className="bg-grid text-cream">
+      <div className="bg-festive text-cream">
         <div className="mx-auto flex h-14 max-w-xl items-center justify-between gap-3 px-4">
           <Link href="/verify" className="flex items-center gap-2.5">
-            <Mosaic size={9} gap={2} />
-            <span className="font-serif text-xl leading-none">{EVENT.name}</span>
+            <Marigold size={20} />
+            <span className="font-serif text-xl font-black leading-none">
+              {EVENT.nameLead} <span className="text-peach">{EVENT.nameTail}</span>
+            </span>
             <span className="eyebrow text-gold">Staff</span>
           </Link>
           <LogoutButton />

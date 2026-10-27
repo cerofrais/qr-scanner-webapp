@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Mosaic from "@/components/Mosaic";
+import Marigold from "@/components/Marigold";
 import { EVENT } from "@/utils/event";
 
 function LoginForm() {
@@ -64,14 +64,15 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="bg-grid flex flex-1 items-center justify-center px-4 py-12">
+    <div className="bg-festive flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-end justify-between text-cream">
           <div>
             <p className="eyebrow text-gold">Staff access</p>
-            <p className="mt-1 font-serif text-5xl leading-none">{EVENT.name}</p>
+            <p className="display-shadow mt-1 font-serif text-5xl font-black leading-[0.85]">{EVENT.nameLead}</p>
+            <p className="display-shadow font-serif text-4xl font-black leading-[0.9] text-peach">{EVENT.nameTail}</p>
           </div>
-          <Mosaic size={18} gap={4} />
+          <Marigold size={40} />
         </div>
         <div className="card p-6">
           <Suspense>

@@ -3,22 +3,25 @@
 import { QRCodeSVG } from "qrcode.react";
 import QRCode from "qrcode";
 import { useState } from "react";
-import Mosaic from "./Mosaic";
+import Marigold from "./Marigold";
 import { EVENT } from "@/utils/event";
 import { formatPhone, type Entry } from "@/utils/entry";
 
 type PassEntry = Pick<Entry, "id" | "name" | "number">;
 
+// Mirrors the tokens in globals.css — canvas can't read Tailwind classes.
 const C = {
-  navy: "#16263F",
-  grid: "#1E3252",
-  rule: "#31445F",
-  cream: "#F4EADA",
-  paper: "#FBF5EC",
-  gold: "#C08A2E",
-  mist: "#C9BCA9",
-  haze: "#7E8CA3",
-  squares: ["#E5006D", "#C08A2E", "#CF6A34", "#E3AC3D"],
+  maroon: "#4F060D",
+  glow: "#5F1118",
+  rule: "#76242C",
+  cream: "#F6E9D3",
+  paper: "#FCF4E8",
+  peach: "#EBC89E",
+  gold: "#E59945",
+  marigold: "#F5941B",
+  rose: "#D1535F",
+  mist: "#E6CFB4",
+  dusk: "#C79A86",
 };
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
@@ -32,10 +35,11 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number):
 // can keep it in their camera roll.
 async function renderPass(entry: PassEntry): Promise<HTMLCanvasElement> {
   const css = getComputedStyle(document.documentElement);
-  const serif = css.getPropertyValue("--font-lora").trim() || "Georgia, serif";
+  const serif = css.getPropertyValue("--font-fraunces").trim() || "Georgia, serif";
   const sans = css.getPropertyValue("--font-poppins").trim() || "system-ui, sans-serif";
   await Promise.all([
     document.fonts.load(`400 40px ${serif}`),
+    document.fonts.load(`900 40px ${serif}`),
     document.fonts.load(`400 40px ${sans}`),
     document.fonts.load(`700 40px ${sans}`),
   ]).catch(() => undefined);
@@ -51,58 +55,83 @@ async function renderPass(entry: PassEntry): Promise<HTMLCanvasElement> {
     if ("letterSpacing" in ctx) ctx.letterSpacing = `${px}px`;
   };
 
-  ctx.fillStyle = C.navy;
+  ctx.fillStyle = C.maroon;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = C.grid;
-  for (let x = 0; x < W; x += 52) ctx.fillRect(x, 0, 2, H);
-  for (let y = 0; y < H; y += 52) ctx.fillRect(0, y, W, 2);
+  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, W);
+  glow.addColorStop(0, C.glow);
+  glow.addColorStop(1, C.maroon);
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
 
-  // Mosaic mark, top right
-  const sq = 46;
-  C.squares.forEach((color, i) => {
+  // Marigold rosette, top right
+  const cx = W - PAD - 54;
+  const cy = PAD + 54;
+  const petal = (rx: number, ry: number, dist: number, color: string, offset: number) => {
     ctx.fillStyle = color;
-    ctx.fillRect(W - PAD - sq * 2 - 8 + (i % 2) * (sq + 8), PAD + Math.floor(i / 2) * (sq + 8), sq, sq);
-  });
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI / 4) * i + offset;
+      ctx.save();
+      ctx.translate(cx + Math.sin(a) * dist, cy - Math.cos(a) * dist);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+  petal(13, 19, 39, C.marigold, 0);
+  petal(11, 15, 25, C.gold, Math.PI / 8);
+  ctx.fillStyle = C.rose;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = C.gold;
   ctx.font = `700 24px ${sans}`;
   track(6);
-  ctx.fillText("ENTRY PASS · EDITION 1", PAD, PAD + 22);
+  ctx.fillText(`ENTRY PASS · ${EVENT.edition.toUpperCase()}`, PAD, PAD + 22);
   track(0);
 
-  ctx.fillStyle = C.cream;
-  ctx.font = `400 150px ${serif}`;
-  ctx.fillText(EVENT.name, PAD - 6, PAD + 250);
+  // Gold offset shadow under each display line, as on the flyer.
+  const display = (text: string, size: number, color: string, y: number) => {
+    ctx.font = `900 ${size}px ${serif}`;
+    ctx.fillStyle = C.gold;
+    ctx.fillText(text, PAD - 6 + size * 0.055, y + size * 0.055);
+    ctx.fillStyle = color;
+    ctx.fillText(text, PAD - 6, y);
+  };
+  display(EVENT.nameLead, 118, C.cream, PAD + 220);
+  display(EVENT.nameTail, 96, C.peach, PAD + 320);
 
-  ctx.fillStyle = C.gold;
-  ctx.font = `400 38px ${serif}`;
-  ctx.fillText(EVENT.tagline, PAD, PAD + 320);
+  ctx.fillStyle = C.marigold;
+  ctx.font = `italic 700 40px ${serif}`;
+  ctx.fillText(EVENT.kicker, PAD, PAD + 380);
 
   // QR on a paper panel
-  const panelY = 470;
-  const panelH = 640;
+  const panelY = 520;
+  const panelH = 600;
   ctx.fillStyle = C.paper;
   ctx.fillRect(PAD, panelY, W - PAD * 2, panelH);
   const qr = document.createElement("canvas");
   await QRCode.toCanvas(qr, entry.id, {
-    width: 560,
+    width: 520,
     margin: 0,
     errorCorrectionLevel: "H",
-    color: { dark: C.navy, light: C.paper },
+    color: { dark: C.maroon, light: C.paper },
   });
-  ctx.drawImage(qr, (W - 560) / 2, panelY + (panelH - 560) / 2, 560, 560);
+  ctx.drawImage(qr, (W - 520) / 2, panelY + (panelH - 520) / 2, 520, 520);
 
   ctx.fillStyle = C.cream;
   let nameSize = 68;
-  ctx.font = `400 ${nameSize}px ${serif}`;
+  ctx.font = `700 ${nameSize}px ${serif}`;
   while (nameSize > 44 && ctx.measureText(entry.name).width > W - PAD * 2) {
     nameSize -= 4;
-    ctx.font = `400 ${nameSize}px ${serif}`;
+    ctx.font = `700 ${nameSize}px ${serif}`;
   }
   ctx.fillText(fitText(ctx, entry.name, W - PAD * 2), PAD, panelY + panelH + 105);
 
-  ctx.fillStyle = C.gold;
+  ctx.fillStyle = C.marigold;
   ctx.font = `700 26px ${sans}`;
   track(5);
   ctx.fillText(formatPhone(entry.number), PAD, panelY + panelH + 160);
@@ -112,13 +141,13 @@ async function renderPass(entry: PassEntry): Promise<HTMLCanvasElement> {
   ctx.fillRect(PAD, panelY + panelH + 200, W - PAD * 2, 2);
 
   ctx.fillStyle = C.cream;
-  ctx.font = `400 42px ${serif}`;
+  ctx.font = `700 42px ${serif}`;
   ctx.fillText(`${EVENT.dateShort} · ${EVENT.hours}`, PAD, panelY + panelH + 270);
   ctx.fillStyle = C.mist;
   ctx.font = `400 30px ${sans}`;
   ctx.fillText(`${EVENT.venue}, ${EVENT.city}`, PAD, panelY + panelH + 320);
 
-  ctx.fillStyle = C.haze;
+  ctx.fillStyle = C.dusk;
   ctx.font = `700 20px ${sans}`;
   track(5);
   ctx.fillText(`${EVENT.presenter.toUpperCase()} · ${EVENT.email.toUpperCase()}`, PAD, H - 70);
@@ -179,13 +208,14 @@ export default function EventPass({ entry }: { entry: PassEntry }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-grid relative overflow-hidden px-6 pb-6 pt-5 text-cream sm:px-8 sm:pb-8">
+      <div className="bg-festive relative overflow-hidden px-6 pb-6 pt-5 text-cream sm:px-8 sm:pb-8">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow text-gold">Entry pass</p>
-            <p className="mt-1 font-serif text-4xl leading-none">{EVENT.name}</p>
+            <p className="display-shadow mt-1.5 font-serif text-4xl font-black leading-[0.85]">{EVENT.nameLead}</p>
+            <p className="display-shadow font-serif text-3xl font-black leading-[0.9] text-peach">{EVENT.nameTail}</p>
           </div>
-          <Mosaic size={14} gap={3} className="mt-1" />
+          <Marigold size={34} className="mt-1" />
         </div>
 
         <div className="mx-auto mt-6 w-fit bg-paper p-4">
@@ -194,18 +224,16 @@ export default function EventPass({ entry }: { entry: PassEntry }) {
             size={208}
             level="H"
             bgColor={C.paper}
-            fgColor={C.navy}
+            fgColor={C.maroon}
             title={`Entry QR code for ${entry.name}`}
           />
         </div>
 
-        <p className="mt-6 break-words font-serif text-2xl leading-tight">{entry.name}</p>
-        <p className="eyebrow mt-2 text-gold">
-          {formatPhone(entry.number)}
-        </p>
+        <p className="mt-6 break-words font-serif text-2xl font-bold leading-tight">{entry.name}</p>
+        <p className="eyebrow mt-2 text-marigold">{formatPhone(entry.number)}</p>
 
-        <div className="mt-5 border-t border-navy-rule pt-4">
-          <p className="font-serif text-lg">
+        <div className="mt-5 border-t border-maroon-rule pt-4">
+          <p className="font-serif text-lg font-semibold">
             {EVENT.dateShort} · <span className="whitespace-nowrap">{EVENT.hours}</span>
           </p>
           <p className="mt-0.5 text-sm text-mist">

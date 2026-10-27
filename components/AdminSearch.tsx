@@ -153,7 +153,7 @@ export default function AdminSearch() {
       )}
 
       {selected && (
-        <div className="card space-y-5 border-t-4 border-t-navy p-5">
+        <div className="card space-y-5 border-t-4 border-t-maroon p-5">
           <div>
             <h2 className="font-serif text-2xl text-ink">Edit registration</h2>
             <p className="mt-0.5 break-all font-mono text-[0.65rem] text-sand">{selected.id}</p>
@@ -180,7 +180,7 @@ export default function AdminSearch() {
               type="checkbox"
               checked={checkedin}
               onChange={(e) => setCheckedin(e.target.checked)}
-              className="h-4 w-4 accent-navy"
+              className="h-4 w-4 accent-maroon"
             />
             Pass scanned
             <span className="text-xs text-sand">({checkedInLabel(selected)})</span>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Lora, Poppins } from "next/font/google";
+import { Fraunces, Poppins } from "next/font/google";
 import "./globals.css";
 import { EVENT } from "@/utils/event";
 
-const lora = Lora({ variable: "--font-lora", subsets: ["latin"] });
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${lora.variable} ${poppins.variable} h-full antialiased`}>
+    <html lang="en" className={`${fraunces.variable} ${poppins.variable} h-full antialiased`}>
       <body className="flex min-h-screen flex-col">{children}</body>
     </html>
   );

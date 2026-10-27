@@ -1,8 +1,8 @@
-# moodboard · Late Checkout — Entry System
+# Diwali Socials · Late Checkout — Entry System
 
-Registration and door check-in for **moodboard**, a festive-season cultural pop-up by Late Checkout — Sunday, 27 September 2026, 11 am to 9 pm at SAS I Towers, Hyderabad.
+Registration and door check-in for **Diwali Socials Pop Up**, a Diwali pop-up by Late Checkout — Sunday, 1 November 2026, 11 am to 8 pm at AKAN, Hyderabad.
 
-Guests register at `/register` with their name, email and phone number and get a personal QR pass, with a welcome note and a *see you on 27 September at SAS I Towers*. Staff scan passes at the door: each pass checks in exactly once, and any later scan shows **Already scanned** with the time it was first used.
+Guests register at `/register` with their name, email and phone number and get a personal QR pass, with a welcome note and a *see you on 1 November at AKAN*. Staff scan passes at the door: each pass checks in exactly once, and any later scan shows **Already scanned** with the time it was first used.
 
 Every page except `/register` requires staff login.
 
@@ -23,7 +23,7 @@ Every page except `/register` requires staff login.
 Name, email and phone number are all required. The phone field defaults to the **+91** country code; numbers are stored in E.164 (`+919876543210`), so `98765 43210`, `+91 98765-43210` and `919876543210` are recognised as the same number. Phone numbers are unique — one pass per number.
 
 ### The pass
-Shows the QR code (the registration's UUID), name, phone, date and venue in the moodboard cover style. **Save pass** renders a 1080×1560 PNG (share sheet on phones, download on desktop); **Print** opens it for printing.
+Shows the QR code (the registration's UUID), name, phone, date and venue in the flyer's cover style. **Save pass** renders a 1080×1560 PNG (share sheet on phones, download on desktop); **Print** opens it for printing.
 
 ### Door check-in
 Scanning a pass immediately marks it checked in and records `checked_in_at`. The update only matches rows where `checkedin = false`, so two devices scanning the same pass at once can't both succeed — the second sees **Already scanned**.
@@ -42,7 +42,7 @@ Scanning a pass immediately marks it checked in and records `checked_in_at`. The
 - **Database**: Supabase (PostgreSQL)
 - **QR**: `qrcode.react` (on screen), `qrcode` (saved pass image), `html5-qrcode` (scanning)
 - **Bulk upload parsing**: `xlsx`
-- **Styling**: Tailwind CSS v4 — palette, Lora + Poppins, grid cover and four-square mark taken from the moodboard sponsor deck
+- **Styling**: Tailwind CSS v4 — palette, Fraunces + Poppins, parchment cover and marigold mark taken from the Diwali Socials flyer
 - **Deployment**: Vercel
 
 ---
@@ -91,7 +91,7 @@ supabase db push
 For a brand-new project you can instead paste `scripts/setup_entries.sql` into the SQL editor.
 
 ### Starting a new event
-`supabase/migrations/20260917223000_moodboard_clean_slate.sql` shows the pattern: copy `entries` into `entries_archive` under an event label, delete the archived rows, then reshape. Update `utils/event.ts` for the new event's copy.
+`supabase/migrations/20261027120000_diwali_socials_clean_slate.sql` shows the pattern: copy `entries` into `entries_archive` under an event label, then delete the archived rows (the moodboard one also reshaped the table). Archive with a cutoff timestamp so registrations for the new event aren't swept up, and verify the snapshot before deleting. Update `utils/event.ts` for the new event's copy and `app/globals.css` for its palette.
 
 ---
 
@@ -128,9 +128,9 @@ The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can a
 
 ```
 app/
-  layout.tsx            # Root: Lora + Poppins, metadata
+  layout.tsx            # Root: Fraunces + Poppins, metadata
   page.tsx              # Redirects / → /register
-  register/page.tsx     # Public: cover, registration form
+  register/page.tsx     # Public: flyer cover, registration form
   login/page.tsx        # Staff passcode
   (staff)/              # Route group — shared staff header, no URL segment
     layout.tsx
@@ -153,10 +153,10 @@ components/
   AdminSearch.tsx       # Search results + edit panel
   ExcelUpload.tsx       # Bulk import
   StaffHeader.tsx       # Staff nav (Scan · Register · Search · Guests)
-  PageHeader.tsx, Mosaic.tsx, LogoutButton.tsx
+  PageHeader.tsx, Marigold.tsx, LogoutButton.tsx
 
 utils/
-  event.ts              # Event copy: name, date, venue
+  event.ts              # Event copy: name, date, venue, categories
   entry.ts              # Entry type, validation, phone normalisation
   supabase/server.ts    # Server-only client (secret key, bypasses RLS)
 

@@ -22,7 +22,7 @@ export default function OnboardPage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition ${
-              activeTab === tab ? "border-navy text-ink" : "border-transparent text-umber hover:text-ink"
+              activeTab === tab ? "border-maroon text-ink" : "border-transparent text-umber hover:text-ink"
             }`}
           >
             {tab === "individual" ? "One guest" : "Bulk upload"}

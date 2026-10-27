@@ -1,32 +1,40 @@
 @import "tailwindcss";
 
-/* moodboard palette — sampled from the sponsor deck (SAS I Towers, 2026). */
+/* Diwali Socials palette — sampled from the flyer (AKAN, 1 Nov 2026). */
 @theme {
-  --color-navy: #16263f;
-  --color-navy-grid: #1e3252;
-  --color-navy-rule: #31445f;
-  --color-cream: #f4eada;
-  --color-paper: #fbf5ec;
-  --color-rule: #d8c7ae;
-  --color-ink: #201a16;
-  --color-ink-soft: #3b322b;
-  --color-umber: #5a4e43;
-  --color-taupe: #8e7b62;
-  --color-sand: #a2917c;
-  --color-mist: #c9bca9;
-  --color-haze: #7e8ca3;
+  /* Deep burgundy of the "Diwali" lettering — primary surface and buttons. */
+  --color-maroon: #4f060d;
+  --color-maroon-deep: #3a040a;
+  --color-maroon-glow: #5f1118;
+  --color-maroon-rule: #76242c;
 
-  --color-magenta: #e5006d;
-  --color-gold: #c08a2e;
-  --color-terracotta: #cf6a34;
-  --color-saffron: #e3ac3d;
-  --color-brick: #b0382c;
-  --color-royal: #23406b;
-  --color-forest: #3e6b4f;
+  /* Parchment. */
+  --color-cream: #f6e9d3;
+  --color-paper: #fcf4e8;
+  --color-rule: #ddc5a3;
+
+  /* Warm text scale, darkest first. */
+  --color-ink: #2a1a12;
+  --color-ink-soft: #4a2f22;
+  --color-umber: #6a4b38;
+  --color-taupe: #8e6f55;
+  --color-sand: #a98b6c;
+  --color-mist: #e6cfb4; /* muted light text on maroon */
+  --color-dusk: #c79a86; /* fainter still on maroon */
+
+  /* Accents. */
+  --color-gold: #e59945; /* offset shadow under the flyer's display type */
+  --color-marigold: #f5941b;
+  --color-rose: #d1535f;
+  --color-peach: #ebc89e; /* the date pill */
+  --color-henna: #661e14; /* the category line */
+  --color-olive: #38361f; /* the "Socials" lettering */
+  --color-brick: #a32c22; /* errors */
+  --color-forest: #42613a; /* success */
 }
 
 @theme inline {
-  --font-serif: var(--font-lora);
+  --font-serif: var(--font-fraunces);
   --font-sans: var(--font-poppins);
 }
 
@@ -34,17 +42,31 @@
   color-scheme: light;
 }
 
-/* Deck cover: navy with a fine blueprint grid. */
-@utility bg-grid {
-  background-color: var(--color-navy);
+/* The flyer's parchment, warmed at the corners by marigold and rose. */
+@utility bg-parchment {
+  background-color: #efe0c6;
   background-image:
-    linear-gradient(var(--color-navy-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-navy-grid) 1px, transparent 1px);
-  background-size: 26px 26px;
-  background-position: -1px -1px;
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-marigold) 28%, transparent), transparent 42%),
+    radial-gradient(circle at 0% 12%, color-mix(in srgb, var(--color-rose) 20%, transparent), transparent 38%),
+    radial-gradient(circle at 8% 100%, color-mix(in srgb, var(--color-rose) 16%, transparent), transparent 40%),
+    radial-gradient(circle at 92% 92%, color-mix(in srgb, var(--color-marigold) 18%, transparent), transparent 42%);
 }
 
-/* Small letterspaced section label ("THE EVENT", "WHO WE ARE"). */
+/* Deep maroon with a faint warm glow, like the flyer's lit evening market. */
+@utility bg-festive {
+  background-color: var(--color-maroon);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, var(--color-maroon-glow), transparent 70%),
+    radial-gradient(circle at 12% 85%, color-mix(in srgb, var(--color-rose) 22%, transparent), transparent 45%),
+    radial-gradient(circle at 88% 15%, color-mix(in srgb, var(--color-marigold) 20%, transparent), transparent 45%);
+}
+
+/* The flyer's gold offset shadow under the display type. */
+@utility display-shadow {
+  text-shadow: 0.055em 0.055em 0 var(--color-gold);
+}
+
+/* Small letterspaced section label. */
 @utility eyebrow {
   font-family: var(--font-sans);
   font-size: 0.6875rem;
@@ -56,13 +78,13 @@
 
 @layer components {
   .field {
-    @apply w-full border border-rule bg-white px-3.5 py-2.5 text-[0.95rem] text-ink placeholder:text-sand transition focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/15;
+    @apply w-full border border-rule bg-white px-3.5 py-2.5 text-[0.95rem] text-ink placeholder:text-sand transition focus:border-maroon focus:outline-none focus:ring-2 focus:ring-maroon/15;
   }
   .field-label {
     @apply mb-1.5 block text-sm font-medium text-ink-soft;
   }
   .btn-primary {
-    @apply inline-flex w-full items-center justify-center gap-2 bg-navy px-5 py-3.5 text-sm font-semibold tracking-wide text-cream transition hover:bg-royal disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex w-full items-center justify-center gap-2 bg-maroon px-5 py-3.5 text-sm font-semibold tracking-wide text-cream transition hover:bg-henna disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
     @apply inline-flex w-full items-center justify-center gap-2 border border-rule bg-paper px-5 py-3 text-sm font-medium text-ink-soft transition hover:border-taupe hover:text-ink disabled:opacity-50;
