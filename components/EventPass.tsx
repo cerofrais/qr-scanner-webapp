@@ -3,7 +3,8 @@
 import { QRCodeSVG } from "qrcode.react";
 import QRCode from "qrcode";
 import { useState } from "react";
-import Marigold from "./Marigold";
+import LateCheckoutLogo from "./LateCheckoutLogo";
+import Rangoli from "./Rangoli";
 import { EVENT } from "@/utils/event";
 import { formatPhone, type Entry } from "@/utils/entry";
 
@@ -63,27 +64,32 @@ async function renderPass(entry: PassEntry): Promise<HTMLCanvasElement> {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
 
-  // Marigold rosette, top right
-  const cx = W - PAD - 54;
-  const cy = PAD + 54;
-  const petal = (rx: number, ry: number, dist: number, color: string, offset: number) => {
-    ctx.fillStyle = color;
-    for (let i = 0; i < 8; i++) {
-      const a = (Math.PI / 4) * i + offset;
-      ctx.save();
-      ctx.translate(cx + Math.sin(a) * dist, cy - Math.cos(a) * dist);
-      ctx.rotate(a);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
+  // Rangoli, top right — same rings as components/Rangoli.tsx
+  const cx = W - PAD - 58;
+  const cy = PAD + 58;
+  const ring = (count: number, draw: (a: number) => void, offset = 0) => {
+    for (let i = 0; i < count; i++) draw(((Math.PI * 2) / count) * i + offset);
   };
-  petal(13, 19, 39, C.marigold, 0);
-  petal(11, 15, 25, C.gold, Math.PI / 8);
-  ctx.fillStyle = C.rose;
+  const petal = (a: number, dist: number, rx: number, ry: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.save();
+    ctx.translate(cx + Math.sin(a) * dist, cy - Math.cos(a) * dist);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+  ring(16, (a) => petal(a, 44, 6, 11, C.marigold));
+  ring(12, (a) => petal(a, 30, 7, 7, C.rose), Math.PI / 12);
+  ring(8, (a) => petal(a, 17, 9, 13, C.gold));
+  ctx.fillStyle = C.maroon;
   ctx.beginPath();
-  ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = C.marigold;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.textBaseline = "alphabetic";
@@ -147,10 +153,26 @@ async function renderPass(entry: PassEntry): Promise<HTMLCanvasElement> {
   ctx.font = `400 30px ${sans}`;
   ctx.fillText(`${EVENT.venue}, ${EVENT.city}`, PAD, panelY + panelH + 320);
 
+  // Late Checkout wordmark, from the fixed-colour variant of the brand mark
+  const logo = new Image();
+  logo.src = "/latecheckout-logo-cream.svg";
+  await new Promise((resolve) => {
+    logo.onload = resolve;
+    logo.onerror = resolve; // a missing logo shouldn't cost the guest their pass
+  });
+  // Sits below the venue line (baseline panelY + panelH + 320), beside the email.
+  const lw = 176;
+  const lh = lw * (402 / 946);
+  const footerTop = H - 98;
+  if (logo.complete && logo.naturalWidth) {
+    ctx.drawImage(logo, PAD, footerTop, lw, lh);
+  }
+
   ctx.fillStyle = C.dusk;
   ctx.font = `700 20px ${sans}`;
   track(5);
-  ctx.fillText(`${EVENT.presenter.toUpperCase()} · ${EVENT.email.toUpperCase()}`, PAD, H - 70);
+  ctx.fillText(EVENT.email.toUpperCase(), PAD + lw + 26, footerTop + lh / 2 + 7);
+  track(0);
 
   return canvas;
 }
@@ -215,7 +237,7 @@ export default function EventPass({ entry }: { entry: PassEntry }) {
             <p className="display-shadow mt-1.5 font-serif text-4xl font-black leading-[0.85]">{EVENT.nameLead}</p>
             <p className="display-shadow font-serif text-3xl font-black leading-[0.9] text-peach">{EVENT.nameTail}</p>
           </div>
-          <Marigold size={34} className="mt-1" />
+          <Rangoli size={34} detail="simple" className="mt-1" />
         </div>
 
         <div className="mx-auto mt-6 w-fit bg-paper p-4">
@@ -234,11 +256,13 @@ export default function EventPass({ entry }: { entry: PassEntry }) {
 
         <div className="mt-5 border-t border-maroon-rule pt-4">
           <p className="font-serif text-lg font-semibold">
-            {EVENT.dateShort} · <span className="whitespace-nowrap">{EVENT.hours}</span>
+            <span className="whitespace-nowrap">{EVENT.dateShort}</span> ·{" "}
+            <span className="whitespace-nowrap">{EVENT.hours}</span>
           </p>
           <p className="mt-0.5 text-sm text-mist">
             {EVENT.venue}, {EVENT.city}
           </p>
+          <LateCheckoutLogo width={92} className="mt-4 text-cream opacity-85" />
         </div>
       </div>
 

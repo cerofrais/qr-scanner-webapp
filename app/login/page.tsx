@@ -2,7 +2,8 @@
 
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Marigold from "@/components/Marigold";
+import LateCheckoutLogo from "@/components/LateCheckoutLogo";
+import Rangoli from "@/components/Rangoli";
 import { EVENT } from "@/utils/event";
 
 function LoginForm() {
@@ -68,11 +69,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-end justify-between text-cream">
           <div>
+            <LateCheckoutLogo width={120} className="mb-3 text-cream opacity-90" />
             <p className="eyebrow text-gold">Staff access</p>
             <p className="display-shadow mt-1 font-serif text-5xl font-black leading-[0.85]">{EVENT.nameLead}</p>
             <p className="display-shadow font-serif text-4xl font-black leading-[0.9] text-peach">{EVENT.nameTail}</p>
           </div>
-          <Marigold size={40} />
+          <Rangoli size={40} detail="simple" />
         </div>
         <div className="card p-6">
           <Suspense>

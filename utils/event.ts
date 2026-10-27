@@ -13,7 +13,13 @@ export const EVENT = {
   hours: "11 am to 8 pm",
   venue: "AKAN",
   city: "Hyderabad",
-  blurb: "A festive afternoon into evening of shopping, food and music.",
+  invite: "You're on our special guest list.",
+  blurb:
+    "The cutest Diwali shopping experience in town — hidden gems, gifting finds, fashion, jewellery, accessories, festive décor and all things pretty. Plus food, games, workshops and sunset music.",
+  // Called out on its own, after the date.
+  extra: "Stay back for a special Halloween Sundowner at AKAN Rooftop.",
+  entryNote: "Share your details, get your QR pass, and show it at the door for free entry.",
+  closer: "Come with your favourite people, shop a little, sip a little, and make a lovely Sunday out of it.",
   // The line-up from the flyer.
   categories: [
     "Fashion",

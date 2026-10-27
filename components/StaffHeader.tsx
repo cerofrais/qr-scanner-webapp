@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "./LogoutButton";
-import Marigold from "./Marigold";
+import Rangoli from "./Rangoli";
 import { EVENT } from "@/utils/event";
 
 const LINKS = [
@@ -21,7 +21,7 @@ export default function StaffHeader() {
       <div className="bg-festive text-cream">
         <div className="mx-auto flex h-14 max-w-xl items-center justify-between gap-3 px-4">
           <Link href="/verify" className="flex items-center gap-2.5">
-            <Marigold size={20} />
+            <Rangoli size={20} detail="simple" />
             <span className="font-serif text-xl font-black leading-none">
               {EVENT.nameLead} <span className="text-peach">{EVENT.nameTail}</span>
             </span>

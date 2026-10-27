@@ -42,14 +42,12 @@
   color-scheme: light;
 }
 
-/* The flyer's parchment, warmed at the corners by marigold and rose. */
+/* The flyer's paper, so the photographic corner art blends into it. */
 @utility bg-parchment {
-  background-color: #efe0c6;
+  background-color: #e8cfaf;
   background-image:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-marigold) 28%, transparent), transparent 42%),
-    radial-gradient(circle at 0% 12%, color-mix(in srgb, var(--color-rose) 20%, transparent), transparent 38%),
-    radial-gradient(circle at 8% 100%, color-mix(in srgb, var(--color-rose) 16%, transparent), transparent 40%),
-    radial-gradient(circle at 92% 92%, color-mix(in srgb, var(--color-marigold) 18%, transparent), transparent 42%);
+    radial-gradient(ellipse 70% 50% at 50% 38%, #f0e2c8, transparent 70%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--color-marigold) 14%, transparent), transparent 55%);
 }
 
 /* Deep maroon with a faint warm glow, like the flyer's lit evening market. */
@@ -102,4 +100,45 @@
 
 body {
   @apply bg-cream font-sans text-ink;
+}
+
+/* Masks live outside @utility — Tailwind v4 drops mask-image declarations
+   defined there, so these are plain CSS. */
+
+/* Late Checkout wordmark, painted in the current text colour. */
+.logo-mask {
+  background-color: currentColor;
+  -webkit-mask-image: url("/latecheckout-logo.svg");
+  mask-image: url("/latecheckout-logo.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* Fade decorative art into the paper. */
+.fade-inward-left,
+.fade-inward-right,
+.fade-upward {
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.fade-inward-left {
+  -webkit-mask-image: radial-gradient(ellipse 125% 115% at 0% 0%, #000 42%, transparent 78%);
+  mask-image: radial-gradient(ellipse 125% 115% at 0% 0%, #000 42%, transparent 78%);
+}
+
+.fade-inward-right {
+  -webkit-mask-image: radial-gradient(ellipse 125% 115% at 100% 0%, #000 42%, transparent 78%);
+  mask-image: radial-gradient(ellipse 125% 115% at 100% 0%, #000 42%, transparent 78%);
+}
+
+.fade-upward {
+  -webkit-mask-image: linear-gradient(to top, #000 30%, transparent 92%);
+  mask-image: linear-gradient(to top, #000 30%, transparent 92%);
 }

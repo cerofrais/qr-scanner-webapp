@@ -6,14 +6,15 @@ export default function WelcomeNote({ name }: { name: string }) {
 
   return (
     <div className="card border-t-4 border-t-marigold px-6 py-7 sm:px-8">
-      <p className="eyebrow text-henna">You&apos;re on the list</p>
+      <p className="eyebrow text-henna">You&apos;re on the guest list</p>
       <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-ink sm:text-4xl">
         Welcome to {EVENT.name}{first ? `, ${first}` : ""}.
       </h2>
       <p className="mt-4 leading-relaxed text-umber">
-        We&apos;re so glad you&apos;re coming. Save the pass below and show it at the entrance —
+        We&apos;re so glad you&apos;re coming. Save the pass below and show it at the door for free entry —
         one scan and you&apos;re in.
       </p>
+      <p className="mt-3 leading-relaxed text-umber">{EVENT.closer}</p>
 
       <div className="mt-6 border-t border-rule pt-5">
         <p className="font-serif text-2xl font-bold leading-snug text-ink">
