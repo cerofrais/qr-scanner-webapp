@@ -57,6 +57,8 @@ SUPABASE_SECRET_KEY=your_supabase_secret_key
 ADMIN_SECRET=your_strong_passcode
 ```
 
+`NEXT_PUBLIC_GA_ID` is optional — Google Analytics falls back to the property hardcoded in `app/layout.tsx` (`G-06YMFSYZ2D`), and only loads in production builds, so local runs stay out of the live property.
+
 `SUPABASE_SECRET_KEY` is server-only — never give it a `NEXT_PUBLIC_` prefix. The `entries` table has no RLS policies, so the publishable key can't read or write it; every query goes through the route handlers in `app/api`, which use the secret key. The browser is never given a Supabase key at all.
 
 The scripts in `scripts/` read `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` from the environment too.
@@ -128,7 +130,7 @@ The GitHub Actions workflow in `.github/workflows/supabase-migrations.yml` can a
 
 ```
 app/
-  layout.tsx            # Root: Fraunces + Poppins, metadata
+  layout.tsx            # Root: Fraunces + Poppins, metadata, Google Analytics
   page.tsx              # Redirects / → /register
   register/page.tsx     # Public: flyer cover, registration form
   login/page.tsx        # Staff passcode
