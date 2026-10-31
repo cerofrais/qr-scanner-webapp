@@ -80,23 +80,49 @@ export default function RegisterPage() {
       </header>
 
       <main className="flex-1">
-        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-x-16">
-          <section className="lg:col-start-1 lg:row-start-1">
-            <p className="eyebrow text-henna">{EVENT.invite}</p>
-            <h2 className="mt-3 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
-              Get your entry pass.
-            </h2>
-            <p className="mt-4 max-w-md leading-relaxed text-ink-soft">{EVENT.blurb}</p>
-            <p className="mt-4 max-w-md leading-relaxed text-ink-soft">{EVENT.entryNote}</p>
-            <p className="mt-5 max-w-md border-l-2 border-marigold pl-4 font-serif text-lg leading-snug text-henna">
-              {EVENT.closer}
-            </p>
-          </section>
+        {EVENT.registrationOpen ? (
+          <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-x-16">
+            <section className="lg:col-start-1 lg:row-start-1">
+              <p className="eyebrow text-henna">{EVENT.invite}</p>
+              <h2 className="mt-3 font-serif text-4xl font-bold leading-tight text-ink sm:text-5xl">
+                Get your entry pass.
+              </h2>
+              <p className="mt-4 max-w-md leading-relaxed text-ink-soft">{EVENT.blurb}</p>
+              <p className="mt-4 max-w-md leading-relaxed text-ink-soft">{EVENT.entryNote}</p>
+              <p className="mt-5 max-w-md border-l-2 border-marigold pl-4 font-serif text-lg leading-snug text-henna">
+                {EVENT.closer}
+              </p>
+            </section>
 
-          <section className="lg:col-start-2 lg:row-start-1">
-            <EntryForm variant="guest" />
-          </section>
-        </div>
+            <section className="lg:col-start-2 lg:row-start-1">
+              <EntryForm variant="guest" />
+            </section>
+          </div>
+        ) : (
+          <div className="mx-auto max-w-2xl px-5 py-14 text-center sm:px-8 sm:py-20">
+            <p className="eyebrow text-henna">Guest list closed</p>
+            <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-ink sm:text-4xl">
+              {EVENT.closedTitle}
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl leading-relaxed text-ink-soft">{EVENT.closedNote}</p>
+
+            <div className="card mx-auto mt-8 max-w-md border-t-4 border-t-marigold px-6 py-6">
+              <p className="eyebrow text-henna">On the day</p>
+              <p className="mt-2 font-serif text-2xl font-bold leading-snug text-ink">
+                {EVENT.venue} reception
+              </p>
+              <p className="mt-1 text-sm text-umber">
+                {EVENT.dateShort} · {EVENT.hours} · {EVENT.city}
+              </p>
+            </div>
+
+            <p className="mx-auto mt-8 max-w-xl font-serif text-lg leading-snug text-henna">{EVENT.closer}</p>
+
+            <p className="mt-8 text-sm text-umber">
+              Already registered? Keep your QR pass handy — it still works at the door.
+            </p>
+          </div>
+        )}
       </main>
 
       <footer className="bg-maroon text-cream">

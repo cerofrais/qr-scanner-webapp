@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { EVENT } from "@/utils/event";
 
 async function expectedToken(): Promise<string | null> {
   const secret = process.env.ADMIN_SECRET;
@@ -19,7 +20,8 @@ async function expectedToken(): Promise<string | null> {
 }
 
 // Everything is admin-gated by default except: the public registration
-// page and its create endpoint, the root redirect, and login itself.
+// page, the root redirect, login itself, and — while the guest list is
+// open — the create endpoint the public form posts to.
 const PUBLIC_PAGES = new Set(["/", "/register", "/login"]);
 
 export async function proxy(request: NextRequest) {
@@ -31,7 +33,10 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
-  if (pathname === "/api/entries" && request.method === "POST") {
+  // Public sign-ups only while the guest list is open. Staff keep creating
+  // walk-ins from /onboard, which carries the session cookie and falls
+  // through to the check below.
+  if (pathname === "/api/entries" && request.method === "POST" && EVENT.registrationOpen) {
     return NextResponse.next();
   }
 

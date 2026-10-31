@@ -13,7 +13,14 @@ export const EVENT = {
   hours: "11 am to 8 pm",
   venue: "AKAN",
   city: "Hyderabad",
+  // Flip to true to reopen the public form. This also controls whether the
+  // public (unauthenticated) create endpoint is reachable — see proxy.ts.
+  // Staff can always register walk-ins from /onboard.
+  registrationOpen: false,
   invite: "You're on our special guest list.",
+  closedTitle: "Guest list registration has closed.",
+  closedNote:
+    "The deadline has passed — but you're still very welcome. Walk in on the day and meet us at the AKAN reception, and we'll help you from there.",
   blurb:
     "The cutest Diwali shopping experience in town — hidden gems, gifting finds, fashion, jewellery, accessories, festive décor and all things pretty. Plus food, games, workshops and sunset music.",
   // Called out on its own, after the date.
