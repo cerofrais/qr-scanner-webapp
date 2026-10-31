@@ -16,7 +16,7 @@ export const EVENT = {
   // Flip to true to reopen the public form. This also controls whether the
   // public (unauthenticated) create endpoint is reachable — see proxy.ts.
   // Staff can always register walk-ins from /onboard.
-  registrationOpen: false,
+  registrationOpen: true,
   invite: "You're on our special guest list.",
   closedTitle: "Guest list registration has closed.",
   closedNote:
